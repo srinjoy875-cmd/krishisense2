@@ -1,7 +1,7 @@
 const axios = require('axios');
 
 // --- CONFIGURATION ---
-const SERVER_URL = 'https://krishisense-backend.onrender.com/api/sensor/upload';
+const SERVER_URL = 'https://krishisense-backend-2.onrender.com/api/sensor/upload';
 const DEVICE_ID = 'KS-001';
 const ZONE = 1;
 const INTERVAL_MS = 5000; // Send data every 5 seconds
