@@ -5,15 +5,14 @@ import Dashboard from './pages/Dashboard';
 import Devices from './pages/Devices';
 import Zones from './pages/Zones';
 import Settings from './pages/Settings';
-import Login from './pages/Login';
-import Signup from './pages/Signup';
+import AuthPage from './pages/AuthPage';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
   if (loading) return <div>Loading...</div>;
-  if (!user) return <Navigate to="/login" />;
+  if (!user) return <Navigate to="/auth" />;
   return children;
 };
 
@@ -23,8 +22,9 @@ function App() {
       <AuthProvider>
         <ToastProvider>
           <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
+            <Route path="/auth" element={<AuthPage />} />
+            <Route path="/login" element={<Navigate to="/auth" />} />
+            <Route path="/signup" element={<Navigate to="/auth" />} />
             <Route path="/" element={
               <ProtectedRoute>
                 <Layout>
