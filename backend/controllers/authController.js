@@ -47,7 +47,7 @@ const login = async (req, res) => {
     // Check for user
     const user = await query('SELECT * FROM users WHERE email = $1', [email]);
     if (user.rows.length === 0) {
-      return res.status(400).json({ message: 'Invalid credentials' });
+      return res.status(404).json({ message: 'User not registered. Please sign up first.' });
     }
 
     // Check password
