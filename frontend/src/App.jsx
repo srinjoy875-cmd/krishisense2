@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import Devices from './pages/Devices';
@@ -18,45 +18,47 @@ const ProtectedRoute = ({ children }) => {
 
 function App() {
   return (
-    <Router>
-      <AuthProvider>
-        <ToastProvider>
-          <Routes>
-            <Route path="/auth" element={<AuthPage />} />
-            <Route path="/login" element={<Navigate to="/auth" />} />
-            <Route path="/signup" element={<Navigate to="/auth" />} />
-            <Route path="/" element={
-              <ProtectedRoute>
-                <Layout>
-                  <Dashboard />
-                </Layout>
-              </ProtectedRoute>
-            } />
-            <Route path="/devices" element={
-              <ProtectedRoute>
-                <Layout>
-                  <Devices />
-                </Layout>
-              </ProtectedRoute>
-            } />
-            <Route path="/zones" element={
-              <ProtectedRoute>
-                <Layout>
-                  <Zones />
-                </Layout>
-              </ProtectedRoute>
-            } />
-            <Route path="/settings" element={
-              <ProtectedRoute>
-                <Layout>
-                  <Settings />
-                </Layout>
-              </ProtectedRoute>
-            } />
-          </Routes>
-        </ToastProvider>
-      </AuthProvider>
-    </Router>
+    <AuthProvider>
+      <ToastProvider>
+        <Routes>
+          <Route path="/auth" element={<AuthPage />} />
+          <Route path="/login" element={<Navigate to="/auth" />} />
+          <Route path="/signup" element={<Navigate to="/auth" />} />
+
+          {/* Redirect root to dashboard */}
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+
+          <Route path="/dashboard" element={
+            <ProtectedRoute>
+              <Layout>
+                <Dashboard />
+              </Layout>
+            </ProtectedRoute>
+          } />
+          <Route path="/devices" element={
+            <ProtectedRoute>
+              <Layout>
+                <Devices />
+              </Layout>
+            </ProtectedRoute>
+          } />
+          <Route path="/zones" element={
+            <ProtectedRoute>
+              <Layout>
+                <Zones />
+              </Layout>
+            </ProtectedRoute>
+          } />
+          <Route path="/settings" element={
+            <ProtectedRoute>
+              <Layout>
+                <Settings />
+              </Layout>
+            </ProtectedRoute>
+          } />
+        </Routes>
+      </ToastProvider>
+    </AuthProvider>
   );
 }
 

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import './AuthPage.css';
 
 const AuthPage = () => {
@@ -12,6 +12,7 @@ const AuthPage = () => {
   });
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const { login, signup } = useAuth();
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -22,13 +23,7 @@ const AuthPage = () => {
     e.preventDefault();
     console.log('Registering...', formData);
     try {
-      const response = await api.post('/auth/signup', {
-        name: formData.name,
-        email: formData.email,
-        password: formData.password
-      });
-      localStorage.setItem('token', response.data.token);
-      localStorage.setItem('user', JSON.stringify(response.data));
+      await signup(formData.name, formData.email, formData.password);
       navigate('/dashboard');
     } catch (err) {
       console.error('Registration error:', err);
@@ -40,12 +35,7 @@ const AuthPage = () => {
     e.preventDefault();
     console.log('Logging in...', formData);
     try {
-      const response = await api.post('/auth/login', {
-        email: formData.email,
-        password: formData.password
-      });
-      localStorage.setItem('token', response.data.token);
-      localStorage.setItem('user', JSON.stringify(response.data));
+      await login(formData.email, formData.password);
       navigate('/dashboard');
     } catch (err) {
       console.error('Login error:', err);

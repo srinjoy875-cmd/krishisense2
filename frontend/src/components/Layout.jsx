@@ -7,7 +7,7 @@ export function Layout({ children }) {
   const navigate = useNavigate();
 
   const navItems = [
-    { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
+    { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
     { icon: Thermometer, label: 'Devices', path: '/devices' },
     { icon: Map, label: 'Zones', path: '/zones' },
     { icon: Settings, label: 'Settings', path: '/settings' },
@@ -39,8 +39,8 @@ export function Layout({ children }) {
                 key={item.path}
                 to={item.path}
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${isActive
-                    ? 'bg-primary/10 text-primary font-medium'
-                    : 'text-text-secondary hover:bg-gray-50 hover:text-text-primary'
+                  ? 'bg-primary/10 text-primary font-medium'
+                  : 'text-text-secondary hover:bg-gray-50 hover:text-text-primary'
                   }`}
               >
                 <Icon size={20} />
