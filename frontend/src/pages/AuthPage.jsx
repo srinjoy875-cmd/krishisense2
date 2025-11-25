@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import './AuthPage.css';
+import { motion } from 'framer-motion';
 
 const AuthPage = () => {
   const [isActive, setIsActive] = useState(false);
@@ -50,8 +51,19 @@ const AuthPage = () => {
   };
 
   return (
-    <div className="auth-page-wrapper">
-      <div className={`modern-login-container ${isActive ? 'active' : ''}`} id="container">
+    <motion.div
+      className="auth-page-wrapper"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.5 }}
+    >
+      <motion.div
+        className={`modern-login-container ${isActive ? 'active' : ''}`}
+        id="container"
+        layoutId="shared-container"
+        transition={{ duration: 0.6, ease: [0.43, 0.13, 0.23, 0.96] }}
+      >
 
         {/* Sign Up Form */}
         <div className="form-container sign-up">
@@ -106,11 +118,11 @@ const AuthPage = () => {
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* FontAwesome CDN */}
       <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" />
-    </div>
+    </motion.div>
   );
 };
 
