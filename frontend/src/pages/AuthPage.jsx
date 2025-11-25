@@ -1,4 +1,4 @@
-  import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import './AuthPage.css';
@@ -20,6 +20,7 @@ const AuthPage = () => {
 
   const handleRegister = async (e) => {
     e.preventDefault();
+    console.log('Registering...', formData);
     try {
       const response = await api.post('/auth/signup', {
         name: formData.name,
@@ -30,12 +31,14 @@ const AuthPage = () => {
       localStorage.setItem('user', JSON.stringify(response.data));
       navigate('/dashboard');
     } catch (err) {
+      console.error('Registration error:', err);
       setError(err.response?.data?.message || 'Registration failed');
     }
   };
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    console.log('Logging in...', formData);
     try {
       const response = await api.post('/auth/login', {
         email: formData.email,
@@ -45,8 +48,15 @@ const AuthPage = () => {
       localStorage.setItem('user', JSON.stringify(response.data));
       navigate('/dashboard');
     } catch (err) {
+      console.error('Login error:', err);
       setError(err.response?.data?.message || 'Login failed');
     }
+  };
+
+  const toggleActive = (status) => {
+    console.log('Toggling active state to:', status);
+    setIsActive(status);
+    setError('');
   };
 
   return (
@@ -96,13 +106,13 @@ const AuthPage = () => {
           <div className="toggle">
             <div className="toggle-panel toggle-left">
               <h1>Welcome Back!</h1>
-              <p>Enter your personal details to use all of site features</p>
-              <button className="hidden" id="login" onClick={() => { setIsActive(false); setError(''); }}>Sign In</button>
+              <p>Enter your personal details to use KrishiSense features</p>
+              <button className="btn-transparent" id="login" type="button" onClick={() => toggleActive(false)}>Sign In</button>
             </div>
             <div className="toggle-panel toggle-right">
               <h1>Hello, Farmer!</h1>
               <p>Register with your personal details to join KrishiSense</p>
-              <button className="hidden" id="register" onClick={() => { setIsActive(true); setError(''); }}>Sign Up</button>
+              <button className="btn-transparent" id="register" type="button" onClick={() => toggleActive(true)}>Sign Up</button>
             </div>
           </div>
         </div>
