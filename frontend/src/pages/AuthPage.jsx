@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+  import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import './AuthPage.css';
@@ -15,7 +15,7 @@ const AuthPage = () => {
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
-    setError(''); // Clear error on typing
+    setError('');
   };
 
   const handleRegister = async (e) => {
@@ -50,8 +50,8 @@ const AuthPage = () => {
   };
 
   return (
-    <div className="auth-container-body">
-      <div className={`container ${isActive ? 'active' : ''}`} id="container">
+    <div className="auth-page-wrapper">
+      <div className={`modern-login-container ${isActive ? 'active' : ''}`} id="container">
 
         {/* Sign Up Form */}
         <div className="form-container sign-up">
@@ -67,7 +67,7 @@ const AuthPage = () => {
             <input type="text" name="name" placeholder="Name" value={formData.name} onChange={handleChange} required />
             <input type="email" name="email" placeholder="Email" value={formData.email} onChange={handleChange} required />
             <input type="password" name="password" placeholder="Password" value={formData.password} onChange={handleChange} required />
-            {error && isActive && <p style={{ color: 'red', margin: '5px 0' }}>{error}</p>}
+            {error && isActive && <p style={{ color: 'red', margin: '5px 0', fontSize: '12px' }}>{error}</p>}
             <button type="submit">Sign Up</button>
           </form>
         </div>
@@ -85,7 +85,7 @@ const AuthPage = () => {
             <span>or use your email password</span>
             <input type="email" name="email" placeholder="Email" value={formData.email} onChange={handleChange} required />
             <input type="password" name="password" placeholder="Password" value={formData.password} onChange={handleChange} required />
-            {error && !isActive && <p style={{ color: 'red', margin: '5px 0' }}>{error}</p>}
+            {error && !isActive && <p style={{ color: 'red', margin: '5px 0', fontSize: '12px' }}>{error}</p>}
             <a href="#">Forget Your Password?</a>
             <button type="submit">Sign In</button>
           </form>
@@ -108,7 +108,7 @@ const AuthPage = () => {
         </div>
       </div>
 
-      {/* FontAwesome for Icons (Optional, can be removed if not using CDN) */}
+      {/* FontAwesome CDN */}
       <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" />
     </div>
   );
