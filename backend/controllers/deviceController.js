@@ -37,4 +37,25 @@ const listDevices = async (req, res) => {
   }
 };
 
-module.exports = { registerDevice, listDevices };
+// @desc    Delete a device
+// @route   DELETE /api/device/:id
+// @access  Private (Admin)
+const deleteDevice = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // Check if device exists
+    const deviceExists = await query('SELECT * FROM devices WHERE device_id = $1', [id]);
+    if (deviceExists.rows.length === 0) {
+      return res.status(404).json({ message: 'Device not found' });
+    }
+
+    await query('DELETE FROM devices WHERE device_id = $1', [id]);
+    res.json({ message: 'Device removed' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+module.exports = { registerDevice, listDevices, deleteDevice };

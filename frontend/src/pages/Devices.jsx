@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
-import { Plus, Server, MapPin, Signal, Wifi, WifiOff } from 'lucide-react';
+import { Plus, Server, MapPin, Signal, Wifi, WifiOff, Trash2 } from 'lucide-react';
 import api from '../services/api';
 
 export default function Devices() {
@@ -35,6 +35,18 @@ export default function Devices() {
     }
   };
 
+  const handleDelete = async (deviceId) => {
+    if (window.confirm('Are you sure you want to delete this device? This action cannot be undone.')) {
+      try {
+        await api.delete(`/device/${deviceId}`);
+        fetchDevices();
+      } catch (error) {
+        console.error("Failed to delete device", error);
+        alert('Failed to delete device');
+      }
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -55,10 +67,19 @@ export default function Devices() {
               <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center text-primary">
                 <Server size={20} />
               </div>
-              <div className={`px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${device.status === 'ONLINE' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
-                }`}>
-                {device.status === 'ONLINE' ? <Wifi size={12} /> : <WifiOff size={12} />}
-                {device.status}
+              <div className="flex items-center gap-2">
+                <div className={`px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${device.status === 'ONLINE' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
+                  }`}>
+                  {device.status === 'ONLINE' ? <Wifi size={12} /> : <WifiOff size={12} />}
+                  {device.status}
+                </div>
+                <button
+                  onClick={() => handleDelete(device.device_id)}
+                  className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"
+                  title="Delete Device"
+                >
+                  <Trash2 size={16} />
+                </button>
               </div>
             </div>
 
