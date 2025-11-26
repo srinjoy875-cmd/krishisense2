@@ -19,4 +19,12 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+// Chat History API
+export const chatApi = {
+  createSession: (title) => api.post('/chat/sessions', { title }),
+  getSessions: () => api.get('/chat/sessions'),
+  getSessionMessages: (sessionId) => api.get(`/chat/sessions/${sessionId}/messages`),
+  deleteSession: (sessionId) => api.delete(`/chat/sessions/${sessionId}`),
+};
+
 export default api;

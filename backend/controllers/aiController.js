@@ -46,6 +46,8 @@ async function getAIAnalysis(req, res) {
     // 3. Call Groq API
     // Check if this is a chat request (has messages) or a fresh analysis
     let messages;
+    let sessionId = req.body.sessionId;
+
     if (req.body.messages) {
       // Chat mode: Append system context + user messages
       messages = [
@@ -71,6 +73,26 @@ async function getAIAnalysis(req, res) {
     });
 
     const analysis = chatCompletion.choices[0]?.message?.content || "Could not generate analysis.";
+
+    // 4. Save to Chat History (if sessionId is provided)
+    if (sessionId) {
+      // Save User Message (last one)
+      if (req.body.messages && req.body.messages.length > 0) {
+        const lastUserMsg = req.body.messages[req.body.messages.length - 1];
+        if (lastUserMsg.role === 'user') {
+          await query('INSERT INTO chat_messages (session_id, role, content) VALUES ($1, $2, $3)', [sessionId, 'user', lastUserMsg.content]);
+        }
+      } else {
+        // Initial Analysis Prompt (if we want to save it as a user message, optional)
+        // await query('INSERT INTO chat_messages (session_id, role, content) VALUES ($1, $2, $3)', [sessionId, 'user', 'Analyze current sensor data']);
+      }
+
+      // Save AI Response
+      await query('INSERT INTO chat_messages (session_id, role, content) VALUES ($1, $2, $3)', [sessionId, 'assistant', analysis]);
+
+      // Update session timestamp
+      await query('UPDATE chat_sessions SET updated_at = CURRENT_TIMESTAMP WHERE id = $1', [sessionId]);
+    }
 
     res.json({ analysis });
 

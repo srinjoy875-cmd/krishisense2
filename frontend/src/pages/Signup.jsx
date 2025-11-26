@@ -38,28 +38,38 @@ export default function Signup() {
           <p className="text-text-secondary">Join KrishiSense today</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4" autoComplete="off">
           {error && <div className="p-3 bg-red-50 text-red-500 text-sm rounded-lg">{error}</div>}
+
+          {/* Hidden dummy inputs to trick browser autofill */}
+          <input type="text" name="prevent_autofill" style={{ display: 'none' }} />
+          <input type="password" name="prevent_autofill" style={{ display: 'none' }} />
 
           <Input
             label="Full Name"
             type="text"
+            name="name_field"
             value={name}
             onChange={(e) => setName(e.target.value)}
+            autoComplete="off"
             required
           />
           <Input
             label="Email"
             type="email"
+            name="email_field"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            autoComplete="off"
             required
           />
           <Input
             label="Password"
             type="password"
+            name="password_field"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            autoComplete="new-password"
             required
           />
 

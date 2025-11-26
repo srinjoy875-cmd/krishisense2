@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
-import { Bot, Sparkles, Loader2, RefreshCw, Sprout, Send } from 'lucide-react';
+import { Bot, Sparkles, Loader2, RefreshCw, Sprout, Send, Plus, MessageSquare, Trash2, Menu, X } from 'lucide-react';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
-import api from '../services/api';
+import api, { chatApi } from '../services/api';
 
 export default function AIAdvisor() {
   const [mode, setMode] = useState('analysis'); // 'analysis' or 'chat'
@@ -15,9 +15,69 @@ export default function AIAdvisor() {
   const [error, setError] = useState('');
 
   // Chat State
+  const [sessions, setSessions] = useState([]);
+  const [currentSessionId, setCurrentSessionId] = useState(null);
   const [chatMessages, setChatMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true); // For mobile/desktop toggle
+
+  // Fetch sessions on mount
+  useEffect(() => {
+    fetchSessions();
+  }, []);
+
+  const fetchSessions = async () => {
+    try {
+      const { data } = await chatApi.getSessions();
+      setSessions(data);
+    } catch (err) {
+      console.error("Error fetching sessions:", err);
+    }
+  };
+
+  const createNewChat = async () => {
+    try {
+      const { data } = await chatApi.createSession('New Chat');
+      setSessions([data, ...sessions]);
+      setCurrentSessionId(data.id);
+      setChatMessages([]);
+      setMode('chat');
+      if (window.innerWidth < 1024) setSidebarOpen(false); // Close sidebar on mobile
+    } catch (err) {
+      console.error("Error creating session:", err);
+    }
+  };
+
+  const loadSession = async (sessionId) => {
+    try {
+      setCurrentSessionId(sessionId);
+      setChatLoading(true);
+      const { data } = await chatApi.getSessionMessages(sessionId);
+      setChatMessages(data);
+      setMode('chat');
+      if (window.innerWidth < 1024) setSidebarOpen(false);
+    } catch (err) {
+      console.error("Error loading session:", err);
+    } finally {
+      setChatLoading(false);
+    }
+  };
+
+  const deleteSession = async (e, sessionId) => {
+    e.stopPropagation();
+    if (!window.confirm("Are you sure you want to delete this chat?")) return;
+    try {
+      await chatApi.deleteSession(sessionId);
+      setSessions(sessions.filter(s => s.id !== sessionId));
+      if (currentSessionId === sessionId) {
+        setCurrentSessionId(null);
+        setChatMessages([]);
+      }
+    } catch (err) {
+      console.error("Error deleting session:", err);
+    }
+  };
 
   const generateAnalysis = async () => {
     setLoading(true);
@@ -39,13 +99,32 @@ export default function AIAdvisor() {
     e.preventDefault();
     if (!inputMessage.trim()) return;
 
+    // If no session exists, create one first
+    let sessionId = currentSessionId;
+    if (!sessionId) {
+      try {
+        const { data } = await chatApi.createSession(inputMessage.substring(0, 30) + '...');
+        setSessions([data, ...sessions]);
+        setCurrentSessionId(data.id);
+        sessionId = data.id;
+      } catch (err) {
+        console.error("Error creating initial session:", err);
+        return;
+      }
+    }
+
     const newMessages = [...chatMessages, { role: 'user', content: inputMessage }];
     setChatMessages(newMessages);
     setInputMessage('');
     setChatLoading(true);
 
     try {
-      const { data } = await api.post('/ai/analyze', { messages: newMessages });
+      // Send history + new message + sessionId
+      const { data } = await api.post('/ai/analyze', {
+        messages: newMessages.map(m => ({ role: m.role, content: m.content })),
+        sessionId: sessionId
+      });
+
       if (data && data.analysis) {
         setChatMessages([...newMessages, { role: 'assistant', content: data.analysis }]);
       } else {
@@ -60,155 +139,167 @@ export default function AIAdvisor() {
   };
 
   return (
-    <div className="space-y-8">
-      {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-3xl font-bold text-text-primary flex items-center gap-2">
-            <Bot className="text-primary" size={32} />
-            AI Crop Advisor
-          </h2>
-          <p className="text-text-secondary mt-1">
-            Get real-time, AI-powered insights for your farm based on sensor data.
-          </p>
+    <div className="flex h-[calc(100vh-100px)] gap-6">
+
+      {/* Sidebar (History) */}
+      <AnimatePresence mode="wait">
+        {(sidebarOpen || window.innerWidth >= 1024) && (
+          <motion.div
+            initial={{ width: 0, opacity: 0 }}
+            animate={{ width: 300, opacity: 1 }}
+            exit={{ width: 0, opacity: 0 }}
+            className="bg-white rounded-2xl border border-gray-200 shadow-sm flex flex-col overflow-hidden h-full absolute lg:relative z-20"
+          >
+            <div className="p-4 border-b border-gray-100">
+              <Button onClick={createNewChat} className="w-full justify-start gap-2 bg-primary/10 text-primary hover:bg-primary/20 border-none">
+                <Plus size={18} />
+                New Chat
+              </Button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-2 space-y-1">
+              {sessions.length === 0 && (
+                <div className="text-center text-gray-400 text-sm mt-10">
+                  No history yet.
+                </div>
+              )}
+              {sessions.map(session => (
+                <div
+                  key={session.id}
+                  onClick={() => loadSession(session.id)}
+                  className={`group flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all ${currentSessionId === session.id ? 'bg-gray-100 text-gray-900' : 'text-gray-600 hover:bg-gray-50'}`}
+                >
+                  <div className="flex items-center gap-3 overflow-hidden">
+                    <MessageSquare size={16} className={currentSessionId === session.id ? 'text-primary' : 'text-gray-400'} />
+                    <span className="truncate text-sm font-medium">{session.title || 'Untitled Chat'}</span>
+                  </div>
+                  <button
+                    onClick={(e) => deleteSession(e, session.id)}
+                    className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-50 hover:text-red-500 rounded-lg transition-all"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col h-full overflow-hidden relative">
+
+        {/* Mobile Toggle */}
+        <div className="lg:hidden absolute top-4 left-4 z-30">
+          <Button size="icon" variant="ghost" onClick={() => setSidebarOpen(!sidebarOpen)} className="bg-white shadow-md">
+            {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
+          </Button>
         </div>
 
-        <div className="flex gap-3 bg-white p-1 rounded-xl border border-gray-200 shadow-sm">
-          <button
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2 ${mode === 'analysis' ? 'bg-primary text-white shadow-md' : 'text-gray-600 hover:bg-gray-50'}`}
-            onClick={() => setMode('analysis')}
-          >
-            <Sparkles size={16} />
-            Analysis
-          </button>
-          <button
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2 ${mode === 'chat' ? 'bg-primary text-white shadow-md' : 'text-gray-600 hover:bg-gray-50'}`}
-            onClick={() => setMode('chat')}
-          >
-            <Bot size={16} />
-            Chat Assistant
-          </button>
-        </div>
-      </div>
+        {/* Header Section */}
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="text-2xl font-bold text-text-primary flex items-center gap-2">
+              <Bot className="text-primary" size={28} />
+              AI Crop Advisor
+            </h2>
+          </div>
 
-      {/* Main Content Area */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
-        {/* Left Column: Context/Visuals */}
-        <div className="lg:col-span-1 space-y-6">
-          <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-100 overflow-hidden relative">
-            <div className="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-green-200 rounded-full opacity-20 blur-xl"></div>
-            <div className="absolute bottom-0 left-0 -mb-4 -ml-4 w-32 h-32 bg-primary rounded-full opacity-10 blur-xl"></div>
-
-            <h3 className="font-semibold text-lg text-primary-dark mb-4 flex items-center gap-2">
-              <Sprout size={20} />
-              How it works
-            </h3>
-            <ul className="space-y-3 text-sm text-gray-600 relative z-10">
-              <li className="flex items-start gap-2">
-                <span className="w-5 h-5 rounded-full bg-white flex items-center justify-center text-xs font-bold text-primary shadow-sm">1</span>
-                <span>We collect real-time data from your deployed sensors.</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="w-5 h-5 rounded-full bg-white flex items-center justify-center text-xs font-bold text-primary shadow-sm">2</span>
-                <span>Our advanced AI model analyzes patterns and anomalies.</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="w-5 h-5 rounded-full bg-white flex items-center justify-center text-xs font-bold text-primary shadow-sm">3</span>
-                <span>You receive actionable advice to optimize crop health.</span>
-              </li>
-            </ul>
-          </Card>
-
-          {/* Placeholder for future features */}
-          <div className="bg-white/50 rounded-2xl p-6 border border-dashed border-gray-200 text-center">
-            <p className="text-sm text-gray-400">Historical Analysis & Trends coming soon</p>
+          <div className="flex gap-2 bg-white p-1 rounded-xl border border-gray-200 shadow-sm">
+            <button
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2 ${mode === 'analysis' ? 'bg-primary text-white shadow-md' : 'text-gray-600 hover:bg-gray-50'}`}
+              onClick={() => setMode('analysis')}
+            >
+              <Sparkles size={16} />
+              Analysis
+            </button>
+            <button
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2 ${mode === 'chat' ? 'bg-primary text-white shadow-md' : 'text-gray-600 hover:bg-gray-50'}`}
+              onClick={() => setMode('chat')}
+            >
+              <Bot size={16} />
+              Chat
+            </button>
           </div>
         </div>
 
-        {/* Right Column: Analysis/Chat Result */}
-        <div className="lg:col-span-2">
+        {/* Content Area */}
+        <div className="flex-1 overflow-hidden bg-white rounded-2xl border border-gray-200 shadow-sm relative">
           {mode === 'analysis' ? (
-            <AnimatePresence mode="wait">
-              {loading ? (
-                <motion.div
-                  key="loading"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="bg-white rounded-2xl p-12 border border-border shadow-sm flex flex-col items-center justify-center min-h-[400px]"
-                >
-                  <div className="relative">
-                    <div className="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <Bot size={24} className="text-primary/50" />
-                    </div>
-                  </div>
-                  <h3 className="mt-6 text-xl font-medium text-gray-700">Consulting AI Agronomist...</h3>
-                  <p className="text-gray-400 mt-2 text-center max-w-md">
-                    Analyzing soil moisture, temperature, and humidity levels to provide personalized recommendations.
-                  </p>
-                </motion.div>
-              ) : analysis ? (
-                <motion.div
-                  key="result"
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.4, ease: "easeOut" }}
-                  className="bg-white rounded-2xl shadow-lg border border-border overflow-hidden"
-                >
-                  <div className="bg-primary/5 px-6 py-4 border-b border-primary/10 flex items-center justify-between">
-                    <h3 className="font-semibold text-primary-dark flex items-center gap-2">
-                      <Sparkles size={18} />
-                      Analysis Report
-                    </h3>
-                    <span className="text-xs text-gray-500 bg-white px-2 py-1 rounded-full border border-gray-100">
-                      {new Date().toLocaleString()}
-                    </span>
-                  </div>
-                  <div className="p-8 prose prose-green max-w-none">
-                    <ReactMarkdown>{analysis}</ReactMarkdown>
-                  </div>
-                  <div className="bg-gray-50 px-6 py-4 border-t border-gray-100 flex justify-end">
-                    <Button variant="ghost" size="sm" onClick={generateAnalysis} className="text-gray-500 hover:text-primary">
-                      <RefreshCw size={16} className="mr-2" />
-                      Regenerate
-                    </Button>
-                  </div>
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="empty"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="bg-white rounded-2xl p-12 border border-border shadow-sm flex flex-col items-center justify-center min-h-[400px] text-center"
-                >
-                  <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-6">
-                    <Bot size={40} className="text-gray-300" />
-                  </div>
-                  <h3 className="text-xl font-medium text-gray-700 mb-2">Ready to Analyze</h3>
-                  <p className="text-gray-500 max-w-md mb-8">
-                    Click the button below to have our AI analyze your latest sensor data and provide recommendations.
-                  </p>
-                  <Button
-                    onClick={generateAnalysis}
-                    className="bg-gradient-to-r from-primary to-green-600 hover:from-primary-dark hover:to-green-700 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5"
+            <div className="h-full overflow-y-auto p-8">
+              <AnimatePresence mode="wait">
+                {loading ? (
+                  <motion.div
+                    key="loading"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="flex flex-col items-center justify-center h-full min-h-[400px]"
                   >
-                    <Sparkles className="mr-2" size={20} />
-                    Generate New Insights
-                  </Button>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                    <div className="relative">
+                      <div className="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <Bot size={24} className="text-primary/50" />
+                      </div>
+                    </div>
+                    <h3 className="mt-6 text-xl font-medium text-gray-700">Consulting AI Agronomist...</h3>
+                    <p className="text-gray-400 mt-2 text-center max-w-md">
+                      Analyzing soil moisture, temperature, and humidity levels to provide personalized recommendations.
+                    </p>
+                  </motion.div>
+                ) : analysis ? (
+                  <motion.div
+                    key="result"
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.4, ease: "easeOut" }}
+                  >
+                    <div className="bg-primary/5 px-6 py-4 rounded-xl border border-primary/10 flex items-center justify-between mb-6">
+                      <h3 className="font-semibold text-primary-dark flex items-center gap-2">
+                        <Sparkles size={18} />
+                        Analysis Report
+                      </h3>
+                      <span className="text-xs text-gray-500 bg-white px-2 py-1 rounded-full border border-gray-100">
+                        {new Date().toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="prose prose-green max-w-none">
+                      <ReactMarkdown>{analysis}</ReactMarkdown>
+                    </div>
+                    <div className="mt-8 flex justify-end">
+                      <Button variant="ghost" size="sm" onClick={generateAnalysis} className="text-gray-500 hover:text-primary">
+                        <RefreshCw size={16} className="mr-2" />
+                        Regenerate
+                      </Button>
+                    </div>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="empty"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="flex flex-col items-center justify-center h-full text-center"
+                  >
+                    <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-6">
+                      <Bot size={40} className="text-gray-300" />
+                    </div>
+                    <h3 className="text-xl font-medium text-gray-700 mb-2">Ready to Analyze</h3>
+                    <p className="text-gray-500 max-w-md mb-8">
+                      Click the button below to have our AI analyze your latest sensor data and provide recommendations.
+                    </p>
+                    <Button
+                      onClick={generateAnalysis}
+                      className="bg-gradient-to-r from-primary to-green-600 hover:from-primary-dark hover:to-green-700 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5"
+                    >
+                      <Sparkles className="mr-2" size={20} />
+                      Generate New Insights
+                    </Button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           ) : (
-            <div className="bg-white rounded-2xl shadow-lg border border-border overflow-hidden h-[600px] flex flex-col">
-              <div className="bg-primary/5 px-6 py-4 border-b border-primary/10">
-                <h3 className="font-semibold text-primary-dark flex items-center gap-2">
-                  <Bot size={18} />
-                  Chat Assistant
-                </h3>
-              </div>
-
+            <div className="flex flex-col h-full">
               <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50/50">
                 {chatMessages.length === 0 && (
                   <div className="text-center text-gray-400 mt-20">
@@ -254,16 +345,6 @@ export default function AIAdvisor() {
                 </form>
               </div>
             </div>
-          )}
-
-          {error && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mt-4 p-4 bg-red-50 text-red-600 rounded-xl border border-red-100 flex items-center gap-2"
-            >
-              <span className="font-bold">Error:</span> {error}
-            </motion.div>
           )}
         </div>
       </div>

@@ -44,3 +44,21 @@ CREATE TABLE irrigation_logs (
     trigger_source VARCHAR(50), -- 'AUTO', 'MANUAL'
     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Chat Sessions Table
+CREATE TABLE chat_sessions (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    title VARCHAR(255) DEFAULT 'New Chat',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Chat Messages Table
+CREATE TABLE chat_messages (
+    id SERIAL PRIMARY KEY,
+    session_id INTEGER REFERENCES chat_sessions(id) ON DELETE CASCADE,
+    role VARCHAR(20) NOT NULL, -- 'user', 'assistant', 'system'
+    content TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
