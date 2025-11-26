@@ -23,7 +23,7 @@ const signup = async (req, res) => {
     );
 
     // Generate Token
-    const token = jwt.sign({ id: newUser.rows[0].id, role: newUser.rows[0].role }, process.env.JWT_SECRET, {
+    const token = jwt.sign({ id: newUser.rows[0].id, role: newUser.rows[0].role }, process.env.JWT_SECRET || 'krishisense_secret_key_123', {
       expiresIn: '30d',
     });
 
@@ -57,7 +57,7 @@ const login = async (req, res) => {
     }
 
     // Generate Token
-    const token = jwt.sign({ id: user.rows[0].id, role: user.rows[0].role }, process.env.JWT_SECRET, {
+    const token = jwt.sign({ id: user.rows[0].id, role: user.rows[0].role }, process.env.JWT_SECRET || 'krishisense_secret_key_123', {
       expiresIn: '30d',
     });
 

@@ -36,6 +36,7 @@ app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/sensor', require('./routes/sensorRoutes'));
 app.use('/api/device', require('./routes/deviceRoutes'));
 app.use('/api/irrigation', require('./routes/irrigationRoutes'));
+app.use('/api/ai', require('./routes/aiRoutes'));
 
 // Test Route
 app.get('/', (req, res) => {

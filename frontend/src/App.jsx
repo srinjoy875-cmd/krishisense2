@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard';
 import Devices from './pages/Devices';
 import Zones from './pages/Zones';
 import Settings from './pages/Settings';
+import AIAdvisor from './pages/AIAdvisor';
 import AuthPage from './pages/AuthPage';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
@@ -36,6 +37,13 @@ function App() {
               <ProtectedRoute>
                 <Layout>
                   <Dashboard />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/advisor" element={
+              <ProtectedRoute>
+                <Layout>
+                  <AIAdvisor />
                 </Layout>
               </ProtectedRoute>
             } />

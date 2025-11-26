@@ -5,7 +5,7 @@ import { Droplets, Thermometer, Wind, Activity, Sun, ChevronDown } from 'lucide-
 import api from '../services/api';
 import { io } from 'socket.io-client';
 
-const socket = io('https://krishisense-backend.onrender.com');
+const socket = io(import.meta.env.VITE_API_URL || 'http://localhost:5000');
 
 export default function Dashboard() {
   const [devices, setDevices] = useState([]);
