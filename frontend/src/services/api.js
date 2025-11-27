@@ -32,4 +32,3 @@ export const weatherApi = {
 };
 
 export default api;
-export { chatApi, weatherApi };
