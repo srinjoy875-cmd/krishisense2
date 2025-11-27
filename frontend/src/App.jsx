@@ -3,7 +3,7 @@ import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { Layout } from './components/Layout';
 import Dashboard from './pages/Dashboard';
-import Weather from './pages/Weather';
+import Weather from './pages/WeatherPage';
 import Devices from './pages/Devices';
 import Zones from './pages/Zones';
 import Settings from './pages/Settings';
