@@ -1,5 +1,6 @@
 const { query } = require("../config/db");
 const Groq = require('groq-sdk');
+const { fetchWeatherData } = require('./weatherController');
 
 const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY || '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',
@@ -29,18 +30,64 @@ async function getAIAnalysis(req, res) {
 
     // 2. Prepare prompt for Groq
     const dataString = JSON.stringify(sensorData.rows, null, 2);
+
+    // Fetch Weather Context if lat/lon provided
+    let weatherContext = "Weather data not available.";
+
+    if (req.body.lat && req.body.lon) {
+      try {
+        const weatherRes = await fetchWeatherData(req.body.lat, req.body.lon);
+
+        if (weatherRes && weatherRes.timelines) {
+          // Check if minutely data exists, otherwise fallback to hourly
+          const current = weatherRes.timelines.minutely?.[0]?.values || weatherRes.timelines.hourly?.[0]?.values;
+          const daily = weatherRes.timelines.daily?.[0]?.values;
+
+          if (current && daily) {
+            weatherContext = `
+                Current Conditions:
+                - Temp: ${current.temperature}°C (Feels like ${current.temperatureApparent}°C)
+                - Humidity: ${current.humidity}%
+                - Dew Point: ${current.dewPoint}°C
+                - Wind: ${current.windSpeed} m/s (Gusts: ${current.windGust} m/s, Dir: ${current.windDirection}°)
+                - Rain Chance: ${current.precipitationProbability}%
+                - Rain Intensity: ${current.rainIntensity} mm/hr
+                - Cloud Cover: ${current.cloudCover}% (Base: ${current.cloudBase} km, Ceiling: ${current.cloudCeiling} km)
+                - Visibility: ${current.visibility} km
+                - UV Index: ${current.uvIndex} (Health Concern: ${current.uvHealthConcern})
+                - Pressure: ${current.pressureSurfaceLevel} hPa (Sea Level: ${current.pressureSeaLevel} hPa)
+                
+                Forecast (Today):
+                - Max Temp: ${daily.temperatureMax}°C
+                - Min Temp: ${daily.temperatureMin}°C
+                - Rain Chance Avg: ${daily.precipitationProbabilityAvg}%
+                - Sunrise: ${new Date(daily.sunriseTime).toLocaleTimeString()}
+                - Sunset: ${new Date(daily.sunsetTime).toLocaleTimeString()}
+                `;
+          }
+        }
+      } catch (e) {
+        console.error("Failed to fetch weather for AI:", e.message);
+      }
+    }
+
     const prompt = `
             You are an expert agricultural AI advisor for KrishiSense. 
-            Analyze the following recent sensor data from our IoT devices:
-            ${dataString}
-
-            Provide a concise, actionable report in Markdown format.
-            Focus on:
-            1. **Current Status**: Are conditions optimal? (Moisture, Temp, Light)
-            2. **Anomalies**: Any sudden drops or spikes?
-            3. **Recommendations**: Specific actions (e.g., "Turn on irrigation in Zone 1", "Check sensor X").
             
-            Keep the tone professional yet encouraging. Use emojis where appropriate.
+            **Context:**
+            - **Weather**: ${weatherContext}
+            - **Sensor Data**: ${dataString}
+
+            Analyze this data and provide a concise, actionable report in Markdown.
+            
+            **Focus on:**
+            1. **Current Status**: Are conditions optimal? (Moisture, Temp, Light)
+            2. **Weather Impact**: Use the advanced metrics (UV, Dew Point, Pressure, Cloud Cover) to provide deeper insights.
+               - e.g., "High UV index requires crop protection."
+               - e.g., "Low pressure system indicates incoming storm."
+            3. **Recommendations**: Specific actions.
+            
+            Keep the tone professional yet encouraging. Use emojis.
         `;
 
     // 3. Call Groq API
@@ -54,7 +101,11 @@ async function getAIAnalysis(req, res) {
         {
           role: "system",
           content: `You are an expert agricultural AI advisor for KrishiSense. 
-                Here is the latest sensor data context: ${dataString}.
+                
+                **Live Context:**
+                - **Weather**: ${weatherContext}
+                - **Sensor Data**: ${dataString}
+
                 Answer the user's questions based on this data and general agricultural knowledge.
                 Keep answers concise and helpful.`
         },

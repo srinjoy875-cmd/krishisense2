@@ -38,6 +38,7 @@ app.use('/api/device', require('./routes/deviceRoutes'));
 app.use('/api/irrigation', require('./routes/irrigationRoutes'));
 app.use('/api/ai', require('./routes/aiRoutes'));
 app.use('/api/chat', require('./routes/chatRoutes'));
+app.use('/api/weather', require('./routes/weatherRoutes'));
 
 // Test Route
 app.get('/', (req, res) => {

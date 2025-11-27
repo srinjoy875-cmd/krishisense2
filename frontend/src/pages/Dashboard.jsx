@@ -1,15 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import { Card } from '../components/ui/Card';
 import { LineChart } from '../components/ui/Chart';
-import { Droplets, Thermometer, Wind, Activity, Sun, ChevronDown } from 'lucide-react';
-import api from '../services/api';
+import { Droplets, Thermometer, Wind, Activity, Sun, ChevronDown, MapPin, Cloud, CloudRain } from 'lucide-react';
+import { motion } from 'framer-motion';
+import api, { weatherApi } from '../services/api';
 import { io } from 'socket.io-client';
+import { useLocation } from '../context/LocationContext';
 
 const socket = io(import.meta.env.VITE_API_URL || 'http://localhost:5000');
 
 export default function Dashboard() {
   const [devices, setDevices] = useState([]);
   const [selectedDeviceId, setSelectedDeviceId] = useState('');
+  const { location, detectLocation } = useLocation();
+  const [weather, setWeather] = useState(null);
 
   const [sensorData, setSensorData] = useState({
     moisture: 0,
@@ -45,7 +49,22 @@ export default function Dashboard() {
     fetchDevices();
   }, []);
 
-  // 2. Fetch Data for Selected Device
+  // 2. Fetch Weather
+  useEffect(() => {
+    const fetchWeather = async () => {
+      if (location.lat && location.lon) {
+        try {
+          const { data } = await weatherApi.getForecast(location.lat, location.lon);
+          setWeather(data);
+        } catch (err) {
+          console.error("Weather fetch error:", err);
+        }
+      }
+    };
+    fetchWeather();
+  }, [location]);
+
+  // 3. Fetch Data for Selected Device
   useEffect(() => {
     if (!selectedDeviceId) return;
 
@@ -120,23 +139,80 @@ export default function Dashboard() {
           <span className="text-sm text-text-secondary">Real-time monitoring</span>
         </div>
 
-        {/* Device Selector */}
-        <div className="relative">
-          <select
-            value={selectedDeviceId}
-            onChange={(e) => setSelectedDeviceId(e.target.value)}
-            className="appearance-none bg-white border border-gray-200 text-text-primary py-2 px-4 pr-10 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer min-w-[200px]"
-          >
-            {devices.length === 0 && <option>No Devices Found</option>}
-            {devices.map(d => (
-              <option key={d.device_id} value={d.device_id}>
-                {d.name || d.device_id}
-              </option>
-            ))}
-          </select>
-          <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
+        <div className="flex items-center gap-4">
+          {/* Location Selector */}
+          <div className="flex items-center gap-3 bg-white p-2 rounded-xl border border-gray-200 shadow-sm">
+            <div className="flex items-center gap-2 px-3 text-sm text-gray-600">
+              <MapPin size={16} className="text-primary" />
+              <span>{location.name}</span>
+            </div>
+            <button
+              onClick={detectLocation}
+              className="p-2 hover:bg-gray-100 rounded-lg text-primary transition-colors"
+              title="Detect Location"
+            >
+              <Activity size={18} />
+            </button>
+          </div>
+
+          {/* Device Selector */}
+          <div className="relative">
+            <select
+              value={selectedDeviceId}
+              onChange={(e) => setSelectedDeviceId(e.target.value)}
+              className="appearance-none bg-white border border-gray-200 text-text-primary py-2 px-4 pr-10 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer min-w-[200px]"
+            >
+              {devices.length === 0 && <option>No Devices Found</option>}
+              {devices.map(d => (
+                <option key={d.device_id} value={d.device_id}>
+                  {d.name || d.device_id}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
+          </div>
         </div>
       </div>
+
+      {/* Weather Widget */}
+      {weather && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden"
+        >
+          <div className="absolute top-0 right-0 p-4 opacity-10">
+            <Cloud size={100} />
+          </div>
+
+          <div className="flex flex-col md:flex-row justify-between items-center gap-6 relative z-10">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-white/20 rounded-full backdrop-blur-sm">
+                <Sun size={32} className="text-yellow-300" />
+              </div>
+              <div>
+                <div className="text-3xl font-bold">{weather.timelines?.minutely?.[0]?.values?.temperature?.toFixed(1) || '--'}°C</div>
+                <div className="text-blue-100">Current Weather</div>
+              </div>
+            </div>
+
+            <div className="flex gap-8 text-center">
+              <div>
+                <div className="text-xl font-semibold">{weather.timelines?.minutely?.[0]?.values?.humidity?.toFixed(0) || '--'}%</div>
+                <div className="text-xs text-blue-100 uppercase tracking-wider">Humidity</div>
+              </div>
+              <div>
+                <div className="text-xl font-semibold">{weather.timelines?.minutely?.[0]?.values?.windSpeed?.toFixed(1) || '--'} m/s</div>
+                <div className="text-xs text-blue-100 uppercase tracking-wider">Wind</div>
+              </div>
+              <div>
+                <div className="text-xl font-semibold">{weather.timelines?.daily?.[0]?.values?.precipitationProbabilityAvg?.toFixed(0) || '0'}%</div>
+                <div className="text-xs text-blue-100 uppercase tracking-wider">Rain Chance</div>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      )}
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
@@ -251,4 +327,3 @@ export default function Dashboard() {
     </div>
   );
 }
-

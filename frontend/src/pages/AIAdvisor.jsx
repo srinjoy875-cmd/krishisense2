@@ -5,9 +5,11 @@ import { Bot, Sparkles, Loader2, RefreshCw, Sprout, Send, Plus, MessageSquare, T
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import api, { chatApi } from '../services/api';
+import { useLocation } from '../context/LocationContext';
 
 export default function AIAdvisor() {
   const [mode, setMode] = useState('analysis'); // 'analysis' or 'chat'
+  const { location } = useLocation();
 
   // Analysis State
   const [analysis, setAnalysis] = useState('');
@@ -85,7 +87,10 @@ export default function AIAdvisor() {
     setAnalysis('');
 
     try {
-      const { data } = await api.post('/ai/analyze');
+      const { data } = await api.post('/ai/analyze', {
+        lat: location.lat,
+        lon: location.lon
+      });
       setAnalysis(data.analysis);
     } catch (err) {
       console.error("AI Error:", err);
@@ -119,10 +124,12 @@ export default function AIAdvisor() {
     setChatLoading(true);
 
     try {
-      // Send history + new message + sessionId
+      // Send history + new message + sessionId + location
       const { data } = await api.post('/ai/analyze', {
         messages: newMessages.map(m => ({ role: m.role, content: m.content })),
-        sessionId: sessionId
+        sessionId: sessionId,
+        lat: location.lat,
+        lon: location.lon
       });
 
       if (data && data.analysis) {

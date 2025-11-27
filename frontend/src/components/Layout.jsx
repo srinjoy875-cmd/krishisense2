@@ -1,7 +1,6 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Thermometer, Settings, LogOut, Sprout, Map, Bot } from 'lucide-react';
-
+import { LayoutDashboard, Thermometer, Settings, LogOut, Sprout, Map, Bot, CloudSun, Cpu } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export function Layout({ children }) {
@@ -10,8 +9,9 @@ export function Layout({ children }) {
 
   const navItems = [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
+    { icon: CloudSun, label: 'Weather', path: '/weather' },
     { icon: Bot, label: 'AI Advisor', path: '/advisor' },
-    { icon: Thermometer, label: 'Devices', path: '/devices' },
+    { icon: Cpu, label: 'Devices', path: '/devices' },
     { icon: Map, label: 'Zones', path: '/zones' },
     { icon: Settings, label: 'Settings', path: '/settings' },
   ];

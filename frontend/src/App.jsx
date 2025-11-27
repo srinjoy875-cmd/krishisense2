@@ -3,13 +3,17 @@ import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { Layout } from './components/Layout';
 import Dashboard from './pages/Dashboard';
+import Weather from './pages/Weather';
 import Devices from './pages/Devices';
 import Zones from './pages/Zones';
 import Settings from './pages/Settings';
 import AIAdvisor from './pages/AIAdvisor';
 import AuthPage from './pages/AuthPage';
+import Login from './pages/Login';
+import Signup from './pages/Signup';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
+import { LocationProvider } from './context/LocationContext';
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -23,54 +27,63 @@ function App() {
 
   return (
     <AuthProvider>
-      <ToastProvider>
-        <AnimatePresence mode="wait">
-          <Routes location={location} key={location.pathname}>
-            <Route path="/auth" element={<AuthPage />} />
-            <Route path="/login" element={<Navigate to="/auth" />} />
-            <Route path="/signup" element={<Navigate to="/auth" />} />
+      <LocationProvider>
+        <ToastProvider>
+          <AnimatePresence mode="wait">
+            <Routes location={location} key={location.pathname}>
+              <Route path="/auth" element={<AuthPage />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
 
-            {/* Redirect root to dashboard */}
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              {/* Redirect root to dashboard */}
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
-            <Route path="/dashboard" element={
-              <ProtectedRoute>
-                <Layout>
-                  <Dashboard />
-                </Layout>
-              </ProtectedRoute>
-            } />
-            <Route path="/advisor" element={
-              <ProtectedRoute>
-                <Layout>
-                  <AIAdvisor />
-                </Layout>
-              </ProtectedRoute>
-            } />
-            <Route path="/devices" element={
-              <ProtectedRoute>
-                <Layout>
-                  <Devices />
-                </Layout>
-              </ProtectedRoute>
-            } />
-            <Route path="/zones" element={
-              <ProtectedRoute>
-                <Layout>
-                  <Zones />
-                </Layout>
-              </ProtectedRoute>
-            } />
-            <Route path="/settings" element={
-              <ProtectedRoute>
-                <Layout>
-                  <Settings />
-                </Layout>
-              </ProtectedRoute>
-            } />
-          </Routes>
-        </AnimatePresence>
-      </ToastProvider>
+              <Route path="/dashboard" element={
+                <ProtectedRoute>
+                  <Layout>
+                    <Dashboard />
+                  </Layout>
+                </ProtectedRoute>
+              } />
+              <Route path="/weather" element={
+                <ProtectedRoute>
+                  <Layout>
+                    <Weather />
+                  </Layout>
+                </ProtectedRoute>
+              } />
+              <Route path="/advisor" element={
+                <ProtectedRoute>
+                  <Layout>
+                    <AIAdvisor />
+                  </Layout>
+                </ProtectedRoute>
+              } />
+              <Route path="/devices" element={
+                <ProtectedRoute>
+                  <Layout>
+                    <Devices />
+                  </Layout>
+                </ProtectedRoute>
+              } />
+              <Route path="/zones" element={
+                <ProtectedRoute>
+                  <Layout>
+                    <Zones />
+                  </Layout>
+                </ProtectedRoute>
+              } />
+              <Route path="/settings" element={
+                <ProtectedRoute>
+                  <Layout>
+                    <Settings />
+                  </Layout>
+                </ProtectedRoute>
+              } />
+            </Routes>
+          </AnimatePresence>
+        </ToastProvider>
+      </LocationProvider>
     </AuthProvider>
   );
 }
