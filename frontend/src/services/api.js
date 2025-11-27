@@ -27,4 +27,9 @@ export const chatApi = {
   deleteSession: (sessionId) => api.delete(`/chat/sessions/${sessionId}`),
 };
 
+export const weatherApi = {
+  getForecast: (lat, lon) => api.get(`/weather?lat=${lat}&lon=${lon}`),
+};
+
 export default api;
+export { chatApi, weatherApi };
