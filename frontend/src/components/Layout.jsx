@@ -19,7 +19,7 @@ export function Layout({ children }) {
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    navigate('/login');
+    navigate('/auth');
   };
 
   return (
