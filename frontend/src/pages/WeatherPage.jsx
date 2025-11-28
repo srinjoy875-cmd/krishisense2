@@ -120,12 +120,33 @@ const LocationModal = ({ onClose, detectLocation, manualSetLocation }) => {
     onClose();
   };
 
-  const handleManualSubmit = (e) => {
+  const handleManualSubmit = async (e) => {
     e.preventDefault();
     const lat = parseFloat(manualCoords.lat);
     const lon = parseFloat(manualCoords.lon);
+
     if (!isNaN(lat) && !isNaN(lon)) {
-      manualSetLocation(lat, lon, `Custom (${lat.toFixed(2)}, ${lon.toFixed(2)})`);
+      // Reverse geocode to get location name
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
+        const data = await res.json();
+
+        // Try to find the most relevant name
+        const locationName =
+          data.address?.city ||
+          data.address?.town ||
+          data.address?.village ||
+          data.address?.hamlet ||
+          data.address?.suburb ||
+          data.address?.county ||
+          data.display_name?.split(',')[0] ||
+          `Location (${lat.toFixed(2)}, ${lon.toFixed(2)})`;
+
+        manualSetLocation(lat, lon, locationName);
+      } catch (err) {
+        console.error("Reverse geocoding error:", err);
+        manualSetLocation(lat, lon, `Location (${lat.toFixed(2)}, ${lon.toFixed(2)})`);
+      }
       onClose();
     }
   };
