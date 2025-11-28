@@ -12,8 +12,9 @@ const socket = io(import.meta.env.VITE_API_URL || 'http://localhost:5000');
 export default function Dashboard() {
   const [devices, setDevices] = useState([]);
   const [selectedDeviceId, setSelectedDeviceId] = useState('');
-  const { location, detectLocation } = useLocation();
+  const { location, detectLocation, manualSetLocation } = useLocation();
   const [weather, setWeather] = useState(null);
+  const [showLocationModal, setShowLocationModal] = useState(false);
 
   const [sensorData, setSensorData] = useState({
     moisture: 0,
@@ -147,9 +148,9 @@ export default function Dashboard() {
               <span>{location.name}</span>
             </div>
             <button
-              onClick={detectLocation}
+              onClick={() => setShowLocationModal(true)}
               className="p-2 hover:bg-gray-100 rounded-lg text-primary transition-colors"
-              title="Detect Location"
+              title="Change Location"
             >
               <Activity size={18} />
             </button>
@@ -324,6 +325,169 @@ export default function Dashboard() {
           </div>
         </Card>
       </div>
+
+      {/* Location Modal */}
+      {showLocationModal && (
+        <LocationModal
+          onClose={() => setShowLocationModal(false)}
+          detectLocation={detectLocation}
+          manualSetLocation={manualSetLocation}
+        />
+      )}
     </div>
   );
 }
+
+// Location Modal Component
+const LocationModal = ({ onClose, detectLocation, manualSetLocation }) => {
+  const [cityQuery, setCityQuery] = useState('');
+  const [manualCoords, setManualCoords] = useState({ lat: '', lon: '' });
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchResults, setSearchResults] = useState([]);
+
+  const handleCitySearch = async (e) => {
+    e.preventDefault();
+    if (!cityQuery.trim()) return;
+
+    setSearchLoading(true);
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(cityQuery)}`);
+      const data = await res.json();
+      setSearchResults(data);
+    } catch (err) {
+      console.error("Geocoding error:", err);
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+  const selectCity = (result) => {
+    manualSetLocation(parseFloat(result.lat), parseFloat(result.lon), result.display_name.split(',')[0]);
+    onClose();
+  };
+
+  const handleManualSubmit = async (e) => {
+    e.preventDefault();
+    const lat = parseFloat(manualCoords.lat);
+    const lon = parseFloat(manualCoords.lon);
+
+    if (!isNaN(lat) && !isNaN(lon)) {
+      // Reverse geocode to get location name
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
+        const data = await res.json();
+        const locationName = data.address?.city || data.address?.town || data.address?.village || data.address?.state || `Location (${lat.toFixed(2)}, ${lon.toFixed(2)})`;
+        manualSetLocation(lat, lon, locationName);
+      } catch (err) {
+        console.error("Reverse geocoding error:", err);
+        manualSetLocation(lat, lon, `Location (${lat.toFixed(2)}, ${lon.toFixed(2)})`);
+      }
+      onClose();
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-xl font-bold text-gray-800">Select Location</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            ✕
+          </button>
+        </div>
+
+        <div className="space-y-6">
+          {/* Option 1: Auto Detect */}
+          <div>
+            <button
+              onClick={() => { detectLocation(); onClose(); }}
+              className="w-full flex items-center justify-center gap-2 bg-blue-50 text-blue-600 py-3 rounded-xl font-medium hover:bg-blue-100 transition-colors"
+            >
+              <MapPin size={18} />
+              Detect My Location
+            </button>
+          </div>
+
+          <div className="relative flex py-2 items-center">
+            <div className="flex-grow border-t border-gray-200"></div>
+            <span className="flex-shrink-0 mx-4 text-gray-400 text-sm">OR</span>
+            <div className="flex-grow border-t border-gray-200"></div>
+          </div>
+
+          {/* Option 2: Search City */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Search City</label>
+            <form onSubmit={handleCitySearch} className="flex gap-2">
+              <input
+                type="text"
+                placeholder="Enter city name..."
+                className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+                value={cityQuery}
+                onChange={(e) => setCityQuery(e.target.value)}
+              />
+              <button
+                type="submit"
+                disabled={searchLoading}
+                className="bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-900 disabled:opacity-50"
+              >
+                {searchLoading ? '...' : 'Search'}
+              </button>
+            </form>
+
+            {/* Search Results */}
+            {searchResults.length > 0 && (
+              <div className="mt-2 max-h-40 overflow-y-auto border border-gray-200 rounded-lg divide-y">
+                {searchResults.map((result, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => selectCity(result)}
+                    className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm text-gray-700 truncate"
+                  >
+                    {result.display_name}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="relative flex py-2 items-center">
+            <div className="flex-grow border-t border-gray-200"></div>
+            <span className="flex-shrink-0 mx-4 text-gray-400 text-sm">OR</span>
+            <div className="flex-grow border-t border-gray-200"></div>
+          </div>
+
+          {/* Option 3: Manual Coordinates */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Enter Coordinates</label>
+            <form onSubmit={handleManualSubmit} className="grid grid-cols-2 gap-4">
+              <input
+                type="number"
+                step="any"
+                placeholder="Latitude"
+                className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+                value={manualCoords.lat}
+                onChange={(e) => setManualCoords({ ...manualCoords, lat: e.target.value })}
+                required
+              />
+              <input
+                type="number"
+                step="any"
+                placeholder="Longitude"
+                className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+                value={manualCoords.lon}
+                onChange={(e) => setManualCoords({ ...manualCoords, lon: e.target.value })}
+                required
+              />
+              <button
+                type="submit"
+                className="col-span-2 bg-gray-100 text-gray-700 py-2 rounded-lg hover:bg-gray-200 font-medium"
+              >
+                Set Coordinates
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
