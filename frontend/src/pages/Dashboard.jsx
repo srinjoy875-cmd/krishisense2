@@ -74,9 +74,9 @@ export default function Dashboard() {
         ]);
 
         if (latestRes.data) {
-          // Digital LDR: 0 = Bright, >0 (usually 1024) = Dark
+          // Digital LDR: Firmware sends 100 for Bright, 1024 for Dark. LCD uses >500 as Dark.
           const rawSunlight = latestRes.data.sunlight;
-          const sunlightStatus = rawSunlight === 0 ? 'Bright' : 'Dark';
+          const sunlightStatus = rawSunlight > 500 ? 'Dark' : 'Bright';
 
           setSensorData({
             moisture: latestRes.data.moisture || 0,
