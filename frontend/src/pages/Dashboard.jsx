@@ -74,14 +74,15 @@ export default function Dashboard() {
         ]);
 
         if (latestRes.data) {
-          const rawSunlight = latestRes.data.sunlight || 4095;
-          const sunlightPercent = Math.max(0, Math.min(100, Math.round((1 - (rawSunlight / 4095)) * 100)));
+          // Digital LDR: 0 = Bright, >0 (usually 1024) = Dark
+          const rawSunlight = latestRes.data.sunlight;
+          const sunlightStatus = rawSunlight === 0 ? 'Bright' : 'Dark';
 
           setSensorData({
             moisture: latestRes.data.moisture || 0,
             temperature: latestRes.data.temperature || 0,
             humidity: latestRes.data.humidity || 0,
-            sunlight: sunlightPercent,
+            sunlight: sunlightStatus,
             pumpStatus: 'OFF'
           });
         } else {
@@ -96,7 +97,8 @@ export default function Dashboard() {
             moisture: reversed.map(d => d.moisture),
             temperature: reversed.map(d => d.temperature),
             humidity: reversed.map(d => d.humidity),
-            sunlight: reversed.map(d => Math.max(0, Math.min(100, Math.round((1 - ((d.sunlight || 4095) / 4095)) * 100))))
+            // Sunlight graph removed for digital LDR
+            sunlight: []
           });
         } else {
           setHistory({ labels: [], moisture: [], temperature: [], humidity: [], sunlight: [] });
@@ -241,10 +243,10 @@ export default function Dashboard() {
         <StatCard
           title="Sunlight"
           value={sensorData.sunlight}
-          unit="%"
+          unit=""
           icon={Sun}
           color="bg-yellow-500"
-          subtext="Light Intensity"
+          subtext="Light Conditions"
         />
         <StatCard
           title="Pump Status"
@@ -306,32 +308,20 @@ export default function Dashboard() {
           </div>
         </Card>
 
-        <Card title="Sunlight Trends" className="h-[400px]">
-          <div className="h-[320px]">
-            <LineChart
-              title="Sunlight (%)"
-              color="#EAB308"
-              data={{
-                labels: history.labels,
-                datasets: [{
-                  label: 'Sunlight',
-                  data: history.sunlight,
-                }]
-              }}
-            />
-          </div>
-        </Card>
       </div>
 
+
       {/* Location Modal */}
-      {showLocationModal && (
-        <LocationModal
-          onClose={() => setShowLocationModal(false)}
-          detectLocation={detectLocation}
-          manualSetLocation={manualSetLocation}
-        />
-      )}
-    </div>
+      {
+        showLocationModal && (
+          <LocationModal
+            onClose={() => setShowLocationModal(false)}
+            detectLocation={detectLocation}
+            manualSetLocation={manualSetLocation}
+          />
+        )
+      }
+    </div >
   );
 }
 
