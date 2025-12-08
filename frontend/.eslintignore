@@ -1,0 +1,4 @@
+dist
+node_modules
+lint_output.txt
+build_output.txt

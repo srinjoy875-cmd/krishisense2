@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Thermometer, Settings, LogOut, Sprout, Map, Bot, CloudSun, Cpu } from 'lucide-react';
+import { LayoutDashboard, Settings, LogOut, Sprout, Map, Bot, CloudSun, Cpu } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export function Layout({ children }) {

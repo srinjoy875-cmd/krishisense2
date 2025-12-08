@@ -9,8 +9,6 @@ import Zones from './pages/Zones';
 import Settings from './pages/Settings';
 import AIAdvisor from './pages/AIAdvisor';
 import AuthPage from './pages/AuthPage';
-import Login from './pages/Login';
-import Signup from './pages/Signup';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
 import { LocationProvider } from './context/LocationContext';

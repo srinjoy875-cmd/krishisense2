@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
-import { Bot, Sparkles, Loader2, RefreshCw, Sprout, Send, Plus, MessageSquare, Trash2, Menu, X } from 'lucide-react';
-import { Card } from '../components/ui/Card';
+import { Bot, Sparkles, Loader2, RefreshCw, Send, Plus, MessageSquare, Trash2, Menu, X } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import api, { chatApi } from '../services/api';
 import { useLocation } from '../context/LocationContext';
@@ -14,7 +13,7 @@ export default function AIAdvisor() {
   // Analysis State
   const [analysis, setAnalysis] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [_error, setError] = useState('');
 
   // Chat State
   const [sessions, setSessions] = useState([]);
@@ -311,8 +310,8 @@ export default function AIAdvisor() {
                 {chatMessages.length === 0 && (
                   <div className="text-center text-gray-400 mt-20">
                     <Bot size={48} className="mx-auto mb-4 opacity-20" />
-                    <p>Ask me anything about your farm's data!</p>
-                    <p className="text-xs mt-2 opacity-60">Try: "How is the soil moisture in Zone 1?"</p>
+                    <p>Ask me anything about your farm&apos;s data!</p>
+                    <p className="text-xs mt-2 opacity-60">Try: &quot;How is the soil moisture in Zone 1?&quot;</p>
                   </div>
                 )}
                 {chatMessages.map((msg, idx) => (

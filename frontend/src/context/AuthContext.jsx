@@ -17,19 +17,41 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = async (email, password) => {
-    const { data } = await api.post('/auth/login', { email, password });
-    localStorage.setItem('token', data.token);
-    localStorage.setItem('user', JSON.stringify(data));
-    setUser(data);
-    return data;
+    try {
+      setLoading(true);
+      const { data } = await api.post('/auth/login', { email, password });
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data));
+      setUser(data);
+      return { success: true, data };
+    } catch (error) {
+      console.error('Login error:', error);
+      return {
+        success: false,
+        error: error.response?.data?.message || 'Login failed'
+      };
+    } finally {
+      setLoading(false);
+    }
   };
 
   const signup = async (name, email, password) => {
-    const { data } = await api.post('/auth/signup', { name, email, password });
-    localStorage.setItem('token', data.token);
-    localStorage.setItem('user', JSON.stringify(data));
-    setUser(data);
-    return data;
+    try {
+      setLoading(true);
+      const { data } = await api.post('/auth/signup', { name, email, password });
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data));
+      setUser(data);
+      return { success: true, data };
+    } catch (error) {
+      console.error('Signup error:', error);
+      return {
+        success: false,
+        error: error.response?.data?.message || 'Signup failed'
+      };
+    } finally {
+      setLoading(false);
+    }
   };
 
   const logout = () => {

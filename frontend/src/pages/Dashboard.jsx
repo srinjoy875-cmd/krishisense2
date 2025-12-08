@@ -1,13 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Card } from '../components/ui/Card';
 import { LineChart } from '../components/ui/Chart';
-import { Droplets, Thermometer, Wind, Activity, Sun, ChevronDown, MapPin, Cloud, CloudRain } from 'lucide-react';
+import { Droplets, Thermometer, Wind, Activity, Sun, ChevronDown, MapPin, Cloud } from 'lucide-react';
 import { motion } from 'framer-motion';
 import api, { weatherApi } from '../services/api';
-import { io } from 'socket.io-client';
 import { useLocation } from '../context/LocationContext';
-
-const socket = io(import.meta.env.VITE_API_URL || 'http://localhost:5000');
 
 export default function Dashboard() {
   const [devices, setDevices] = useState([]);
@@ -32,7 +29,7 @@ export default function Dashboard() {
     sunlight: []
   });
 
-  const [loading, setLoading] = useState(true);
+  const [_loading, setLoading] = useState(true);
 
   // 1. Fetch List of Devices
   useEffect(() => {

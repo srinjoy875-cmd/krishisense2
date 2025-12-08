@@ -31,7 +31,13 @@ export default function Devices() {
       setNewDevice({ device_id: '', name: '', zone: '', location: '' });
       fetchDevices();
     } catch (error) {
-      alert('Failed to register device');
+      if (error.response?.status === 400 && error.response?.data?.message === 'Device already registered') {
+        alert('Good news! Device is already connected. Refreshing list...');
+        setShowModal(false);
+        fetchDevices();
+      } else {
+        alert('Failed to register device');
+      }
     }
   };
 

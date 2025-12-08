@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
-import { Droplets, Sun, Thermometer } from 'lucide-react';
+import { Droplets, Thermometer } from 'lucide-react';
 import api from '../services/api';
 import { useToast } from '../context/ToastContext';
 
@@ -66,7 +66,7 @@ export default function Zones() {
 
       {devices.length === 0 ? (
         <div className="text-center py-10 text-gray-500">
-          No devices found. Please register a device in the "Devices" tab.
+          No devices found. Please register a device in the &quot;Devices&quot; tab.
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

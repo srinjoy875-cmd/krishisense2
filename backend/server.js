@@ -76,6 +76,16 @@ pool.query('SELECT NOW()', (err, res) => {
   }
 });
 
+// Global Error Handler
+app.use((err, req, res, next) => {
+  console.error('Unhandled Error:', err.stack);
+  res.status(500).json({
+    success: false,
+    message: 'Internal Server Error',
+    error: process.env.NODE_ENV === 'development' ? err.message : undefined
+  });
+});
+
 // Start Server
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

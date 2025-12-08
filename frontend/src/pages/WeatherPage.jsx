@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
-  Cloud, Sun, CloudRain, Wind, Droplets, Thermometer,
-  Calendar, MapPin, ArrowUp, ArrowDown, Umbrella, Eye,
+  Cloud, Sun, CloudRain, Wind, Droplets,
+  MapPin, Umbrella, Eye,
   CloudLightning, CloudSnow, CloudSun
 } from 'lucide-react';
 import { Line, Bar } from 'react-chartjs-2';
