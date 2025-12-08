@@ -24,8 +24,12 @@ const AuthPage = () => {
     e.preventDefault();
     console.log('Registering...', formData);
     try {
-      await signup(formData.name, formData.email, formData.password);
-      navigate('/dashboard');
+      const result = await signup(formData.name, formData.email, formData.password);
+      if (result.success) {
+        navigate('/dashboard');
+      } else {
+        setError(result.error);
+      }
     } catch (err) {
       console.error('Registration error:', err);
       setError(err.response?.data?.message || 'Registration failed');
@@ -36,8 +40,12 @@ const AuthPage = () => {
     e.preventDefault();
     console.log('Logging in...', formData);
     try {
-      await login(formData.email, formData.password);
-      navigate('/dashboard');
+      const result = await login(formData.email, formData.password);
+      if (result.success) {
+        navigate('/dashboard');
+      } else {
+        setError(result.error);
+      }
     } catch (err) {
       console.error('Login error:', err);
       setError(err.response?.data?.message || 'Login failed');

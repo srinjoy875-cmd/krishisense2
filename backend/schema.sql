@@ -1,8 +1,9 @@
--- Drop tables if they exist (to allow re-running the script)
 DROP TABLE IF EXISTS irrigation_logs CASCADE;
 DROP TABLE IF EXISTS sensor_data CASCADE;
 DROP TABLE IF EXISTS devices CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
+DROP TABLE IF EXISTS chat_messages CASCADE;
+DROP TABLE IF EXISTS chat_sessions CASCADE;
 
 -- Users Table
 CREATE TABLE users (
