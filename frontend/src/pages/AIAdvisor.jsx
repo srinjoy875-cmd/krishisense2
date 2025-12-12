@@ -7,8 +7,16 @@ import api, { chatApi } from '../services/api';
 import { useLocation } from '../context/LocationContext';
 
 export default function AIAdvisor() {
-  const [mode, setMode] = useState('analysis'); // 'analysis' or 'chat'
+  const [mode, setMode] = useState('analysis'); // 'analysis', 'chat', or 'crop-doctor'
   const { location } = useLocation();
+
+  // Crop Doctor State
+  const [cropInputs, setCropInputs] = useState({
+    N: 50, P: 50, K: 50, ph: 6.5, temperature: 25, humidity: 50, moisture: 60,
+    rainfall: 800, altitude: 200, soil_type: 'Loam'
+  });
+  const [cropResult, setCropResult] = useState(null);
+  const [doctorLoading, setDoctorLoading] = useState(false);
 
   // Analysis State
   const [analysis, setAnalysis] = useState('');
@@ -144,6 +152,26 @@ export default function AIAdvisor() {
     }
   };
 
+  const handleCropPredict = async (e) => {
+    e.preventDefault();
+    setDoctorLoading(true);
+    setCropResult(null); // Clear previous results
+    try {
+      const { data } = await api.post('/ml/recommend', cropInputs);
+      if (data.error) {
+        console.error("ML Error Response:", data.error);
+        alert(`ML Error: ${data.error}\n\nPlease check console for details.`);
+      } else {
+        setCropResult(data);
+      }
+    } catch (err) {
+      console.error("Crop Doctor Error:", err);
+      alert(`Failed to get predictions. Error: ${err.response?.data?.error || err.message}\n\nCheck console and ensure backend is running.`);
+    } finally {
+      setDoctorLoading(false);
+    }
+  };
+
   return (
     <div className="flex h-[calc(100vh-100px)] gap-6">
 
@@ -226,6 +254,13 @@ export default function AIAdvisor() {
               <Bot size={16} />
               Chat
             </button>
+            <button
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2 ${mode === 'crop-doctor' ? 'bg-primary text-white shadow-md' : 'text-gray-600 hover:bg-gray-50'}`}
+              onClick={() => setMode('crop-doctor')}
+            >
+              <Sparkles size={16} />
+              Crop Doctor
+            </button>
           </div>
         </div>
 
@@ -304,7 +339,7 @@ export default function AIAdvisor() {
                 )}
               </AnimatePresence>
             </div>
-          ) : (
+          ) : mode === 'chat' ? (
             <div className="flex flex-col h-full">
               <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50/50">
                 {chatMessages.length === 0 && (
@@ -351,9 +386,229 @@ export default function AIAdvisor() {
                 </form>
               </div>
             </div>
+          ) : (
+            // Crop Doctor UI
+            <div className="h-full overflow-y-auto p-8">
+              <div className="max-w-3xl mx-auto">
+                <div className="bg-green-50 rounded-2xl p-6 mb-8 border border-green-100">
+                  <h3 className="text-xl font-bold text-green-800 mb-2">Smart Crop Engine 🧠</h3>
+                  <p className="text-green-700">
+                    Enter your soil parameters below. Our ML model will analyze season, soil composition, and climate to recommend the optimal harvest.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  {/* Input Form */}
+                  <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
+                    <h4 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                      <Menu size={18} className="text-primary" /> Soil Parameters
+                    </h4>
+                    <form onSubmit={handleCropPredict} className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-xs font-semibold text-gray-500 uppercase">Nitrogen (N)</label>
+                          <input type="number" value={cropInputs.N} onChange={e => setCropInputs({ ...cropInputs, N: e.target.value })} className="w-full p-2 border rounded-lg" />
+                        </div>
+                        <div>
+                          <label className="text-xs font-semibold text-gray-500 uppercase">Phosphorous (P)</label>
+                          <input type="number" value={cropInputs.P} onChange={e => setCropInputs({ ...cropInputs, P: e.target.value })} className="w-full p-2 border rounded-lg" />
+                        </div>
+                        <div>
+                          <label className="text-xs font-semibold text-gray-500 uppercase">Potassium (K)</label>
+                          <input type="number" value={cropInputs.K} onChange={e => setCropInputs({ ...cropInputs, K: e.target.value })} className="w-full p-2 border rounded-lg" />
+                        </div>
+                        <div>
+                          <label className="text-xs font-semibold text-gray-500 uppercase">pH Level</label>
+                          <input type="number" step="0.1" value={cropInputs.ph} onChange={e => setCropInputs({ ...cropInputs, ph: e.target.value })} className="w-full p-2 border rounded-lg" />
+                        </div>
+                      </div>
+                      <div className="border-t border-gray-100 pt-4">
+                        <label className="text-xs font-semibold text-gray-500 uppercase">Temperature (°C)</label>
+                        <input type="number" value={cropInputs.temperature} onChange={e => setCropInputs({ ...cropInputs, temperature: e.target.value })} className="w-full p-2 border rounded-lg mb-2" />
+
+                        <label className="text-xs font-semibold text-gray-500 uppercase">Soil Moisture (%)</label>
+                        <input type="number" value={cropInputs.moisture} onChange={e => setCropInputs({ ...cropInputs, moisture: e.target.value })} className="w-full p-2 border rounded-lg mb-2" />
+
+                        <label className="text-xs font-semibold text-gray-500 uppercase">Rainfall (mm/year)</label>
+                        <input type="number" value={cropInputs.rainfall} onChange={e => setCropInputs({ ...cropInputs, rainfall: e.target.value })} className="w-full p-2 border rounded-lg mb-2" />
+
+                        <label className="text-xs font-semibold text-gray-500 uppercase">Altitude (meters)</label>
+                        <input type="number" value={cropInputs.altitude} onChange={e => setCropInputs({ ...cropInputs, altitude: e.target.value })} className="w-full p-2 border rounded-lg mb-2" />
+
+                        <label className="text-xs font-semibold text-gray-500 uppercase">Soil Type</label>
+                        <select value={cropInputs.soil_type} onChange={e => setCropInputs({ ...cropInputs, soil_type: e.target.value })} className="w-full p-2 border rounded-lg">
+                          <option>Loam</option>
+                          <option>Clay</option>
+                          <option>Sandy Loam</option>
+                          <option>Clay Loam</option>
+                          <option>Silt Loam</option>
+                          <option>Black Soil</option>
+                          <option>Red Soil</option>
+                          <option>Alluvial</option>
+                          <option>Laterite</option>
+                        </select>
+                      </div>
+                      <Button type="submit" disabled={doctorLoading} className="w-full">
+                        {doctorLoading ? <Loader2 className="animate-spin" /> : 'Predict Best Crop'}
+                      </Button>
+                    </form>
+                  </div>
+
+                  {/* Results */}
+                  <div className="space-y-4">
+                    {cropResult ? (
+                      <AnimatePresence>
+                        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+                          {/* Header Info */}
+                          {cropResult.current_season && (
+                            <div className="mb-4 p-3 bg-gradient-to-r from-blue-50 to-green-50 rounded-lg border border-blue-200">
+                              <p className="text-sm text-blue-900">
+                                <strong>🌾 Season:</strong> {cropResult.current_season} |
+                                <strong className="ml-2">📊 Analyzed:</strong> {cropResult.total_analyzed} crops |
+                                <strong className="ml-2">🎯 Top Match:</strong> {cropResult.top_prediction}
+                              </p>
+                            </div>
+                          )}
+
+                          <h4 className="font-bold text-lg mb-4 flex items-center gap-2">
+                            🌟 Top Recommendations
+                            <span className="text-xs font-normal text-gray-500">
+                              ({cropResult.ml_method || 'ML-Powered'})
+                            </span>
+                          </h4>
+
+                          {cropResult.recommended?.map((rec, i) => (
+                            <div key={i} className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm mb-3 relative overflow-hidden hover:shadow-md transition-shadow">
+                              {/* Color indicator */}
+                              <div className={`absolute left-0 top-0 bottom-0 w-1 ${rec.quality === 'Excellent' || rec.emoji === '🌟' ? 'bg-green-500' :
+                                rec.quality === 'Good' || rec.emoji === '✅' ? 'bg-blue-500' :
+                                  rec.quality === 'Fair' || rec.emoji === '⚡' ? 'bg-yellow-500' : 'bg-gray-400'
+                                }`}></div>
+
+                              <div className="flex justify-between items-start">
+                                {/* Left side - Crop info */}
+                                <div className="flex-1 ml-3">
+                                  {/* Crop name and badges */}
+                                  <div className="flex items-center gap-2 mb-2 flex-wrap">
+                                    <h5 className="font-bold text-gray-900 text-lg">{rec.emoji || '🌱'} {rec.crop}</h5>
+                                    <span className={`text-[10px] px-2 py-1 rounded-full uppercase font-bold ${rec.quality === 'Excellent' ? 'bg-green-100 text-green-700' :
+                                      rec.quality === 'Good' ? 'bg-blue-100 text-blue-700' :
+                                        rec.quality === 'Fair' ? 'bg-yellow-100 text-yellow-700' :
+                                          'bg-gray-100 text-gray-700'
+                                      }`}>{rec.quality}</span>
+                                    {rec.season && (
+                                      <span className="text-[9px] px-2 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200">
+                                        {rec.season}
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  {/* Description */}
+                                  <p className="text-xs text-gray-600 mb-3">{rec.desc}</p>
+
+                                  {/* Yield Potential */}
+                                  {rec.yield_potential && (
+                                    <div className="mb-2 p-2 bg-gradient-to-r from-green-50 to-emerald-50 rounded border border-green-200">
+                                      <p className="text-xs">
+                                        <strong className="text-green-800">📈 Yield Potential:</strong>{' '}
+                                        <span className="font-bold text-green-700">{rec.yield_potential.rating}</span>{' '}
+                                        ({rec.yield_potential.percentage}% - Grade {rec.yield_potential.grade})
+                                      </p>
+                                    </div>
+                                  )}
+
+                                  {/* Match Reasons */}
+                                  {rec.match_reasons && rec.match_reasons.length > 0 && (
+                                    <div className="mb-2">
+                                      {rec.match_reasons.map((reason, idx) => (
+                                        <p key={idx} className="text-[10px] text-green-600 leading-relaxed">{reason}</p>
+                                      ))}
+                                    </div>
+                                  )}
+
+                                  {/* Warnings */}
+                                  {rec.warnings && rec.warnings.length > 0 && (
+                                    <div className="mb-2">
+                                      {rec.warnings.map((warning, idx) => (
+                                        <p key={idx} className="text-[10px] text-orange-600 leading-relaxed">{warning}</p>
+                                      ))}
+                                    </div>
+                                  )}
+
+                                  {/* Risk Factors */}
+                                  {rec.risk_factors && rec.risk_factors.length > 0 && (
+                                    <div className="mb-2 p-2 bg-red-50 rounded border border-red-100">
+                                      <p className="text-[10px] font-semibold text-red-700 mb-1">⚠️ Risk Assessment:</p>
+                                      {rec.risk_factors.map((risk, idx) => (
+                                        <p key={idx} className="text-[9px] text-red-600 leading-tight">{risk}</p>
+                                      ))}
+                                    </div>
+                                  )}
+
+                                  {/* Additional Info */}
+                                  <div className="mt-2 flex gap-2 flex-wrap">
+                                    {rec.growth_duration && rec.growth_duration !== 'N/A' && (
+                                      <span className="bg-purple-50 text-purple-700 text-[9px] px-2 py-1 rounded border border-purple-200">
+                                        ⏱️ {rec.growth_duration} days
+                                      </span>
+                                    )}
+                                    {rec.water_requirement && (
+                                      <span className="bg-cyan-50 text-cyan-700 text-[9px] px-2 py-1 rounded border border-cyan-200">
+                                        💧 {rec.water_requirement} water
+                                      </span>
+                                    )}
+                                    {rec.estimated_roi && (
+                                      <span className="bg-amber-50 text-amber-700 text-[9px] px-2 py-1 rounded border border-amber-200">
+                                        💰 {rec.estimated_roi} ROI
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* Right side - Score */}
+                                <div className="text-right ml-4">
+                                  <span className="text-3xl font-bold text-primary">{Math.round(rec.score)}%</span>
+                                  <p className="text-[9px] text-gray-400 uppercase tracking-wide">ML Confidence</p>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+
+                          {/* Feature Analysis */}
+                          {cropResult.feature_analysis && cropResult.feature_analysis.length > 0 && (
+                            <div className="mt-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
+                              <h5 className="font-bold text-sm mb-3 text-gray-800">🔬 Top Influential Factors</h5>
+                              <div className="space-y-2">
+                                {cropResult.feature_analysis.map((feature, idx) => (
+                                  <div key={idx} className="flex items-center justify-between">
+                                    <span className="text-xs font-medium text-gray-700">{feature.feature}</span>
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-xs text-gray-600">{feature.value}</span>
+                                      <span className={`text-[9px] px-2 py-0.5 rounded font-bold ${feature.impact === 'High' ? 'bg-red-100 text-red-700' :
+                                        feature.impact === 'Medium' ? 'bg-yellow-100 text-yellow-700' :
+                                          'bg-green-100 text-green-700'
+                                        }`}>{feature.importance}%</span>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </motion.div>
+                      </AnimatePresence>
+                    ) : (
+                      <div className="h-full flex flex-col items-center justify-center text-gray-400 p-8 border-2 border-dashed border-gray-200 rounded-2xl">
+                        <Sparkles size={40} className="mb-4 text-gray-300" />
+                        <p className="text-center text-sm">Fill parameters to let the ML Engine find the perfect crop for your land.</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
           )}
         </div>
       </div>
-    </div>
+    </div >
   );
 }

@@ -4,6 +4,7 @@ const dotenv = require('dotenv');
 const { pool } = require('./config/db');
 const fs = require('fs');
 const path = require('path');
+const { spawn } = require('child_process');
 
 dotenv.config();
 
@@ -39,6 +40,53 @@ app.use('/api/irrigation', require('./routes/irrigationRoutes'));
 app.use('/api/ai', require('./routes/aiRoutes'));
 app.use('/api/chat', require('./routes/chatRoutes'));
 app.use('/api/weather', require('./routes/weatherRoutes'));
+
+// --- ML Engine Helper ---
+const runPythonScript = (scriptName, data) => {
+  return new Promise((resolve, reject) => {
+    const scriptPath = path.join(__dirname, 'ml_engine', scriptName);
+    const pythonProcess = spawn('python', [scriptPath]);
+    let result = '';
+    let error = '';
+
+    pythonProcess.stdin.write(JSON.stringify(data));
+    pythonProcess.stdin.end();
+
+    pythonProcess.stdout.on('data', (data) => { result += data.toString(); });
+    pythonProcess.stderr.on('data', (data) => { error += data.toString(); });
+
+    pythonProcess.on('close', (code) => {
+      if (code !== 0) reject(`Script exited with code ${code}: ${error}`);
+      else {
+        try { resolve(JSON.parse(result)); }
+        catch (e) { reject(`Failed to parse Python output: ${result}`); }
+      }
+    });
+  });
+};
+
+// --- ML Routes ---
+app.post('/api/ml/recommend', async (req, res) => {
+  try {
+    const data = req.body;
+    const result = await runPythonScript('predict.py', data);
+    res.json(result);
+  } catch (err) {
+    console.error("ML Error:", err);
+    res.status(500).json({ error: "ML Engine failed", details: err.toString() });
+  }
+});
+
+app.post('/api/ml/monitor', async (req, res) => {
+  try {
+    const data = req.body;
+    const result = await runPythonScript('monitor.py', data);
+    res.json(result);
+  } catch (err) {
+    console.error("ML Error:", err);
+    res.status(500).json({ error: "ML Engine failed", details: err.toString() });
+  }
+});
 
 // Test Route
 app.get('/', (req, res) => {
