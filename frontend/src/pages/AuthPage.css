@@ -223,6 +223,43 @@
     transform: translateX(0);
 }
 
-.modern-login-container.active .toggle-right {
-    transform: translateX(200%);
+
+.error-message {
+    color: #ef4444;
+    background-color: #fee2e2;
+    padding: 10px;
+    border-radius: 6px;
+    font-size: 13px;
+    margin: 10px 0;
+    width: 100%;
+    text-align: center;
+    border: 1px solid #fca5a5;
+    animation: shake 0.5s ease-in-out;
+    display: block;
+    position: relative;
+    z-index: 10;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+@keyframes shake {
+
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+
+    10%,
+    30%,
+    50%,
+    70%,
+    90% {
+        transform: translateX(-4px);
+    }
+
+    20%,
+    40%,
+    60%,
+    80% {
+        transform: translateX(4px);
+    }
 }

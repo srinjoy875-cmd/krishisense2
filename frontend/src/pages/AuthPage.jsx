@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import './AuthPage.css';
 import { motion } from 'framer-motion';
 
@@ -14,6 +15,7 @@ const AuthPage = () => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
   const { login, signup } = useAuth();
+  const { addToast } = useToast();
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -29,10 +31,12 @@ const AuthPage = () => {
         navigate('/dashboard');
       } else {
         setError(result.error);
+        addToast(result.error, 'error');
       }
     } catch (err) {
       console.error('Registration error:', err);
       setError(err.response?.data?.message || 'Registration failed');
+      addToast(err.response?.data?.message || 'Registration failed', 'error');
     }
   };
 
@@ -45,10 +49,12 @@ const AuthPage = () => {
         navigate('/dashboard');
       } else {
         setError(result.error);
+        addToast(result.error, 'error');
       }
     } catch (err) {
       console.error('Login error:', err);
       setError(err.response?.data?.message || 'Login failed');
+      addToast(err.response?.data?.message || 'Login failed', 'error');
     }
   };
 
@@ -84,10 +90,10 @@ const AuthPage = () => {
               <a href="#" className="icon"><i className="fa-brands fa-linkedin-in"></i></a>
             </div>
             <span>or use your email for registration</span>
-            <input type="text" name="name" placeholder="Name" value={formData.name} onChange={handleChange} required />
-            <input type="email" name="email" placeholder="Email" value={formData.email} onChange={handleChange} required />
-            <input type="password" name="password" placeholder="Password" value={formData.password} onChange={handleChange} required />
-            {error && isActive && <p style={{ color: 'red', margin: '5px 0', fontSize: '12px' }}>{error}</p>}
+            <input type="text" name="name" placeholder="Name" value={formData.name} onChange={handleChange} required autoComplete="off" />
+            <input type="email" name="email" placeholder="Email" value={formData.email} onChange={handleChange} required autoComplete="off" />
+            <input type="password" name="password" placeholder="Password" value={formData.password} onChange={handleChange} required autoComplete="new-password" />
+            {error && isActive && <p className="error-message">{error}</p>}
             <button type="submit">Sign Up</button>
           </form>
         </div>
@@ -103,9 +109,9 @@ const AuthPage = () => {
               <a href="#" className="icon"><i className="fa-brands fa-linkedin-in"></i></a>
             </div>
             <span>or use your email password</span>
-            <input type="email" name="email" placeholder="Email" value={formData.email} onChange={handleChange} required />
-            <input type="password" name="password" placeholder="Password" value={formData.password} onChange={handleChange} required />
-            {error && !isActive && <p style={{ color: 'red', margin: '5px 0', fontSize: '12px' }}>{error}</p>}
+            <input type="email" name="email" placeholder="Email" value={formData.email} onChange={handleChange} required autoComplete="off" />
+            <input type="password" name="password" placeholder="Password" value={formData.password} onChange={handleChange} required autoComplete="current-password" />
+            {error && !isActive && <p className="error-message">{error}</p>}
             <a href="#">Forget Your Password?</a>
             <button type="submit">Sign In</button>
           </form>

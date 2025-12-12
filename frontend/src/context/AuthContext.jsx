@@ -18,39 +18,43 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      setLoading(true);
       const { data } = await api.post('/auth/login', { email, password });
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data));
       setUser(data);
       return { success: true, data };
     } catch (error) {
-      console.error('Login error:', error);
+      if (error.response && error.response.status >= 400 && error.response.status < 500) {
+        // Client error (e.g. invalid credentials), just log warning
+        console.warn('Login failed:', error.response.data.message);
+      } else {
+        // Server error or network issue
+        console.error('Login error:', error);
+      }
       return {
         success: false,
         error: error.response?.data?.message || 'Login failed'
       };
-    } finally {
-      setLoading(false);
     }
   };
 
   const signup = async (name, email, password) => {
     try {
-      setLoading(true);
       const { data } = await api.post('/auth/signup', { name, email, password });
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data));
       setUser(data);
       return { success: true, data };
     } catch (error) {
-      console.error('Signup error:', error);
+      if (error.response && error.response.status >= 400 && error.response.status < 500) {
+        console.warn('Signup failed:', error.response.data.message);
+      } else {
+        console.error('Signup error:', error);
+      }
       return {
         success: false,
         error: error.response?.data?.message || 'Signup failed'
       };
-    } finally {
-      setLoading(false);
     }
   };
 
