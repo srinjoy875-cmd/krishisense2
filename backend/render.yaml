@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: krishisense-backend
+    env: node
+    buildCommand: npm install && pip install -r ml_engine/requirements.txt
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
