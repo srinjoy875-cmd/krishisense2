@@ -46,7 +46,7 @@ app.use('/api/weather', require('./routes/weatherRoutes'));
 const runPythonScript = (scriptName, data) => {
   return new Promise((resolve, reject) => {
     const scriptPath = path.join(__dirname, 'ml_engine', scriptName);
-    const pythonProcess = spawn('python', [scriptPath]);
+    const pythonProcess = spawn('python3', [scriptPath]);
     let result = '';
     let error = '';
 

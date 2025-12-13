@@ -24,6 +24,14 @@ COPY . .
 # Install Python ML dependencies
 RUN python3 -m pip install --no-cache-dir -r ml_engine/requirements.txt
 
+# Train the ML model if .pkl files don't exist
+RUN if [ ! -f ml_engine/crop_model.pkl ]; then \
+      echo "Training ML model..." && \
+      python3 ml_engine/train_model.py; \
+    else \
+      echo "ML models already present"; \
+    fi
+
 # Expose port
 EXPOSE 5000
 
