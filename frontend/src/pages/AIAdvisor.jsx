@@ -235,7 +235,7 @@ export default function AIAdvisor() {
           <div>
             <h2 className="text-2xl font-bold text-text-primary flex items-center gap-2">
               <Bot className="text-primary" size={28} />
-              AI Crop Advisor
+              AgriMind Pro
             </h2>
           </div>
 
@@ -259,7 +259,7 @@ export default function AIAdvisor() {
               onClick={() => setMode('crop-doctor')}
             >
               <Sparkles size={16} />
-              Crop Doctor
+              Harvest Lab
             </button>
           </div>
         </div>
@@ -387,7 +387,7 @@ export default function AIAdvisor() {
               </div>
             </div>
           ) : (
-            // Crop Doctor UI
+            // Harvest Lab UI
             <div className="h-full overflow-y-auto p-8">
               <div className="max-w-3xl mx-auto">
                 <div className="bg-green-50 rounded-2xl p-6 mb-8 border border-green-100">
