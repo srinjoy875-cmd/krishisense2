@@ -116,6 +116,22 @@ export default function Dashboard() {
     return () => clearInterval(interval);
   }, [selectedDeviceId]); // Re-run when device changes
 
+  const handlePumpControl = async (command) => {
+    if (!selectedDeviceId) return;
+    try {
+      await api.post('/irrigation/control', {
+        device_id: selectedDeviceId,
+        command: command
+      });
+      // Optimistically update UI
+      setSensorData(prev => ({ ...prev, pumpStatus: command }));
+      alert(`Pump command ${command} sent!`);
+    } catch (err) {
+      console.error("Pump Error:", err);
+      alert("Failed to send pump command");
+    }
+  };
+
   const StatCard = ({ title, value, unit, icon: Icon, color, subtext }) => (
     <Card className="flex items-center justify-between">
       <div>
@@ -248,14 +264,37 @@ export default function Dashboard() {
           color="bg-yellow-500"
           subtext="Light Conditions"
         />
-        <StatCard
-          title="Pump Status"
-          value={sensorData.pumpStatus}
-          unit=""
-          icon={Activity}
-          color={sensorData.pumpStatus === 'ON' ? 'bg-green-500' : 'bg-gray-400'}
-          subtext="Auto mode active"
-        />
+        <Card className="flex items-center justify-between">
+          <div>
+            <p className="text-text-secondary text-sm font-medium mb-1">Pump Control</p>
+            <div className="flex gap-2 mt-2">
+              <button
+                onClick={() => handlePumpControl('ON')}
+                disabled={sensorData.pumpStatus === 'ON'}
+                className={`px-3 py-1 rounded-md text-sm font-bold transition-colors ${sensorData.pumpStatus === 'ON'
+                  ? 'bg-green-500 text-white shadow-md'
+                  : 'bg-gray-100 text-gray-500 hover:bg-green-100 hover:text-green-600'
+                  }`}
+              >
+                ON
+              </button>
+              <button
+                onClick={() => handlePumpControl('OFF')}
+                disabled={sensorData.pumpStatus === 'OFF'}
+                className={`px-3 py-1 rounded-md text-sm font-bold transition-colors ${sensorData.pumpStatus === 'OFF'
+                  ? 'bg-red-500 text-white shadow-md'
+                  : 'bg-gray-100 text-gray-500 hover:bg-red-100 hover:text-red-600'
+                  }`}
+              >
+                OFF
+              </button>
+            </div>
+            {/* <p className="text-xs text-text-secondary mt-2">Manual Override</p> */}
+          </div>
+          <div className={`w-12 h-12 rounded-full flex items-center justify-center ${sensorData.pumpStatus === 'ON' ? 'bg-green-500' : 'bg-gray-400'}`}>
+            <Activity size={24} className="text-white" />
+          </div>
+        </Card>
       </div>
 
       {/* Charts */}

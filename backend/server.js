@@ -106,6 +106,10 @@ const runPythonScript = (scriptName, data) => {
         catch (e) { reject(`Failed to parse Python output: ${result}`); }
       }
     });
+
+    pythonProcess.on('error', (err) => {
+      reject(`Failed to start Python process: ${err.message}`);
+    });
   });
 };
 
