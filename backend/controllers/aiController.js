@@ -3,7 +3,7 @@ const Groq = require('groq-sdk');
 const { fetchWeatherData } = require('./weatherController');
 
 const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY || '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',
+  apiKey: process.env.GROQ_API_KEY,
 });
 
 async function getAIAnalysis(req, res) {
