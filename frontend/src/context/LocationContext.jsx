@@ -34,9 +34,30 @@ export function LocationProvider({ children }) {
         setLoading(false);
       },
       (err) => {
-        setError('Unable to retrieve your location');
+        // Handle specific error codes
+        let errorMessage = 'Unable to retrieve your location';
+        let errorType = 'general';
+
+        switch (err.code) {
+          case 1: // PERMISSION_DENIED
+            errorMessage = 'Location access is blocked by your browser. Please enable permissions in the URL bar.';
+            errorType = 'denied';
+            break;
+          case 2: // POSITION_UNAVAILABLE
+          case 3: // TIMEOUT
+            errorMessage = 'Location unavailable. Please check your connection or try searching for your city.';
+            errorType = 'unavailable';
+            break;
+        }
+
+        setError({ message: errorMessage, type: errorType, details: err });
         setLoading(false);
         console.error("Geolocation error:", err);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
       }
     );
   };
