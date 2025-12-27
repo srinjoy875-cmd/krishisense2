@@ -30,7 +30,7 @@ export default function Dashboard() {
     sunlight: []
   });
 
-  const [_loading, setLoading] = useState(true);
+  const [manualMode, setManualMode] = useState(false);
 
   // 1. Fetch List of Devices
   useEffect(() => {
@@ -79,16 +79,23 @@ export default function Dashboard() {
           const rawSunlight = latestRes.data.sunlight;
           const sunlightStatus = rawSunlight > 500 ? 'Bright' : 'Dark';
 
-          setSensorData({
+          setSensorData(prev => ({
             moisture: latestRes.data.moisture || 0,
             temperature: latestRes.data.temperature || 0,
             humidity: latestRes.data.humidity || 0,
             sunlight: sunlightStatus,
-            pumpStatus: 'OFF'
-          });
+            // Critical Fix: Respect Manual Mode. If in Manual, force ON. Else default to OFF (Auto state not synced yet)
+            pumpStatus: manualMode ? 'ON' : 'OFF'
+          }));
         } else {
           // Reset if no data
-          setSensorData({ moisture: 0, temperature: 0, humidity: 0, sunlight: 0, pumpStatus: 'OFF' });
+          setSensorData(prev => ({
+            moisture: 0,
+            temperature: 0,
+            humidity: 0,
+            sunlight: 0,
+            pumpStatus: manualMode ? 'ON' : 'OFF'
+          }));
         }
 
         if (historyRes.data) {
@@ -115,7 +122,7 @@ export default function Dashboard() {
     const interval = setInterval(fetchData, 5000);
 
     return () => clearInterval(interval);
-  }, [selectedDeviceId]); // Re-run when device changes
+  }, [selectedDeviceId, manualMode]); // Add manualMode as dependency
 
   const handlePumpControl = async (command) => {
     if (!selectedDeviceId) return;
@@ -124,9 +131,18 @@ export default function Dashboard() {
         device_id: selectedDeviceId,
         command: command
       });
-      // Optimistically update UI
-      setSensorData(prev => ({ ...prev, pumpStatus: command }));
-      alert(`Pump command ${command} sent!`);
+
+      // Update Manual Mode logic
+      if (command === 'ON') {
+        setManualMode(true);
+        setSensorData(prev => ({ ...prev, pumpStatus: 'ON' }));
+        alert(`Pump switched to MANUAL ON`);
+      } else {
+        setManualMode(false);
+        setSensorData(prev => ({ ...prev, pumpStatus: 'OFF' })); // Revert to OFF (Auto)
+        alert(`Pump switched to AUTO (OFF)`);
+      }
+
     } catch (err) {
       console.error("Pump Error:", err);
       alert("Failed to send pump command");

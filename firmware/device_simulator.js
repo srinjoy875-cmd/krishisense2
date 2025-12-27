@@ -2,7 +2,7 @@ const axios = require('axios');
 const io = require('socket.io-client');
 
 // --- CONFIGURATION ---
-const SERVER_URL = 'https://krishisense2-backend.onrender.com';
+const SERVER_URL = process.env.API_URL || 'http://localhost:5000';
 const API_URL = `${SERVER_URL}/api/sensor/upload`;
 const DEVICE_ID = 'KS-001';
 const ZONE = 1;
@@ -10,6 +10,7 @@ const INTERVAL_MS = 5000;
 
 // --- STATE ---
 let pumpStatus = 'OFF';
+let manualOverride = false;
 let moisture = 60; // Start with decent moisture
 
 // --- SOCKET CONNECTION ---
@@ -17,17 +18,19 @@ const socket = io(SERVER_URL);
 
 socket.on('connect', () => {
   console.log('✅ Connected to Socket.IO server');
-  socket.emit('join_device', DEVICE_ID); // Ensure backend supports joining rooms if implemented, otherwise this is harmless
+  socket.emit('join_device', DEVICE_ID);
 });
 
 socket.on(`command_${DEVICE_ID}`, (data) => {
   console.log(`\n🔔 MANUAL COMMAND RECEIVED: ${data.command}`);
   if (data.command === 'ON') {
     pumpStatus = 'ON';
-    console.log('💦 Pump turned ON (Manual Override)');
+    manualOverride = true; // LOCK in Manual ON
+    console.log('💦 Pump FORCE ON (Manual Override ACTIVE - Ignoring Auto)');
   } else if (data.command === 'OFF') {
     pumpStatus = 'OFF';
-    console.log('🛑 Pump turned OFF (Manual Override)');
+    manualOverride = false; // Release to Auto
+    console.log('🛑 Pump OFF (Manual Override RELEASED - Returning to Auto)');
   }
 });
 
@@ -69,24 +72,35 @@ setInterval(async () => {
     };
 
     // 3. Send Data
-    console.log(`\n📤 Sending Data (Pump: ${pumpStatus}): Moist=${moisture}%, Temp=${temperature}°C, Light=${sunlight < 500 ? 'Bright' : 'Dark'}`);
+    // console.log(`\n📤 Sending Data (Pump: ${pumpStatus}): Moist=${moisture}%, Temp=${temperature}°C, Light=${sunlight < 500 ? 'Bright' : 'Dark'}`);
+    process.stdout.write(`\r📤 Sending Data: Moist=${moisture}%, Pump=${pumpStatus} (${manualOverride ? 'MANUAL' : 'AUTO'})   `);
     const response = await axios.post(API_URL, payload);
 
     // 4. Handle Server Auto-Command (Backup to Sockets)
     const command = response.data.command;
-    if (command === 'ON' && pumpStatus === 'OFF') {
-      pumpStatus = 'ON';
-      console.log('💦 AUTO-COMMAND: Pump turned ON');
-    } else if (command === 'OFF' && pumpStatus === 'ON') {
-      pumpStatus = 'OFF';
-      console.log('🛑 AUTO-COMMAND: Pump turned OFF');
+
+    // CRITICAL FIX: Only accept Auto-Command if NOT in Manual Override
+    if (!manualOverride) {
+      if (command === 'ON' && pumpStatus === 'OFF') {
+        pumpStatus = 'ON';
+        console.log('\n💦 AUTO-COMMAND: Pump turned ON');
+      } else if (command === 'OFF' && pumpStatus === 'ON') {
+        pumpStatus = 'OFF';
+        console.log('\n🛑 AUTO-COMMAND: Pump turned OFF');
+      }
+    } else {
+      // Logic: If in Manual Override, we IGNORE the backend's auto command
+      if (command !== 'NONE' && command !== pumpStatus) {
+        // Optional: Log that we are ignoring it
+        // console.log(`(Ignoring Auto-Command ${command} due to Manual Override)`);
+      }
     }
 
   } catch (error) {
     if (error.code === 'ECONNREFUSED' || error.response?.status === 404) {
-      console.error(`❌ Connection Failed to ${API_URL}`);
+      console.error(`\n❌ Connection Failed to ${API_URL}`);
     } else {
-      console.error('❌ Error:', error.message);
+      console.error('\n❌ Error:', error.message);
     }
   }
 }, INTERVAL_MS);
