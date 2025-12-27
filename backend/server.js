@@ -4,7 +4,7 @@ const dotenv = require('dotenv');
 const { pool } = require('./config/db');
 const fs = require('fs');
 const path = require('path');
-const { spawn } = require('child_process');
+const mlService = require('./services/mlService');
 
 dotenv.config();
 
@@ -86,54 +86,29 @@ app.use('/api/ai', require('./routes/aiRoutes'));
 app.use('/api/chat', require('./routes/chatRoutes'));
 app.use('/api/weather', require('./routes/weatherRoutes'));
 
-// --- ML Engine Helper ---
-const runPythonScript = (scriptName, data) => {
-  return new Promise((resolve, reject) => {
-    const scriptPath = path.join(__dirname, 'ml_engine', scriptName);
-    const pythonProcess = spawn('python3', [scriptPath]);
-    let result = '';
-    let error = '';
-
-    pythonProcess.stdin.write(JSON.stringify(data));
-    pythonProcess.stdin.end();
-
-    pythonProcess.stdout.on('data', (data) => { result += data.toString(); });
-    pythonProcess.stderr.on('data', (data) => { error += data.toString(); });
-
-    pythonProcess.on('close', (code) => {
-      if (code !== 0) reject(`Script exited with code ${code}: ${error}`);
-      else {
-        try { resolve(JSON.parse(result)); }
-        catch (e) { reject(`Failed to parse Python output: ${result}`); }
-      }
-    });
-
-    pythonProcess.on('error', (err) => {
-      reject(`Failed to start Python process: ${err.message}`);
-    });
-  });
-};
-
 // --- ML Routes ---
 app.post('/api/ml/recommend', async (req, res) => {
   try {
     const data = req.body;
-    const result = await runPythonScript('predict.py', data);
+    const result = await mlService.predict(data);
     res.json(result);
   } catch (err) {
-    console.error("ML Error:", err);
-    res.status(500).json({ error: "ML Engine failed", details: err.toString() });
+    console.error("ML Route Error:", err.message);
+    res.status(500).json({ error: "ML Engine failed", details: err.message });
   }
 });
 
+// Note: /monitor is not yet migrated to remote - keeping local for now
+// To migrate it, add a /monitor endpoint to server_ml.py
+// Note: /monitor is now migrated to the unified ML Service
 app.post('/api/ml/monitor', async (req, res) => {
   try {
     const data = req.body;
-    const result = await runPythonScript('monitor.py', data);
+    const result = await mlService.monitor(data);
     res.json(result);
   } catch (err) {
-    console.error("ML Error:", err);
-    res.status(500).json({ error: "ML Engine failed", details: err.toString() });
+    console.error("Monitor Error:", err.message);
+    res.status(500).json({ error: "Monitor failed", details: err.message });
   }
 });
 
@@ -185,5 +160,5 @@ app.use((err, req, res, next) => {
 
 // Start Server
 server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`Server running on port ${PORT} `);
 });

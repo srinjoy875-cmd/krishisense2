@@ -157,7 +157,22 @@ export default function AIAdvisor() {
     setDoctorLoading(true);
     setCropResult(null); // Clear previous results
     try {
-      const { data } = await api.post('/ml/recommend', cropInputs);
+      // Ensure all inputs are numbers
+      const payload = {
+        N: Number(cropInputs.N),
+        P: Number(cropInputs.P),
+        K: Number(cropInputs.K),
+        ph: Number(cropInputs.ph),
+        temperature: Number(cropInputs.temperature),
+        humidity: Number(cropInputs.humidity),
+        moisture: Number(cropInputs.moisture),
+        rainfall: Number(cropInputs.rainfall),
+        altitude: Number(cropInputs.altitude),
+        soil_type: cropInputs.soil_type
+      };
+
+      const { data } = await api.post('/ml/recommend', payload);
+
       if (data.error) {
         console.error("ML Error Response:", data.error);
         alert(`ML Error: ${data.error}\n\nPlease check console for details.`);
@@ -166,7 +181,9 @@ export default function AIAdvisor() {
       }
     } catch (err) {
       console.error("Crop Doctor Error:", err);
-      alert(`Failed to get predictions. Error: ${err.response?.data?.error || err.message}\n\nCheck console and ensure backend is running.`);
+      // Extract detailed error message from backend if available
+      const errorMsg = err.response?.data?.details || err.response?.data?.error || err.message;
+      alert(`Prediction Failed!\n\nReason: ${errorMsg}\n\nTip: Check the PythonAnywhere 'Error Log' if this persists.`);
     } finally {
       setDoctorLoading(false);
     }
